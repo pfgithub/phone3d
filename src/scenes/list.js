@@ -15,6 +15,7 @@ import library from './library.js';
 import origami from './origami.js';
 import neonCity from './neon-city.js';
 import marbleRun from './marble-run.js';
+import marbleMaze from './marble-maze.js';
 
 import zipper from './zipper.js';
 import impossible from './impossible.js';
@@ -53,7 +54,7 @@ export const FAVOURITES = [crystal, jellyfish, contourQuarry, appInterface, port
   ribbonWeave];
 
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
-  clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
+  clockwork, library, origami, neonCity, marbleRun, marbleMaze, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout];

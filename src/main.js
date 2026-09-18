@@ -80,6 +80,19 @@ function init() {
   window.addEventListener('resize', resize);
   document.fonts.ready.then(resize);
   let sensorTimer;
+  // Scene gravity is independent of the calibrated eye and tracking mode.
+  const deviceGravity = new THREE.Vector3(), sceneGravity = new THREE.Vector3();
+  let lastMotion = -Infinity;
+  window.addEventListener('devicemotion', e => {
+    const measured = e.accelerationIncludingGravity;
+    if (!measured || ![measured.x, measured.y, measured.z].every(Number.isFinite)) return;
+    const linear = e.acceleration;
+    const hasLinear = linear && [linear.x, linear.y, linear.z].every(Number.isFinite);
+    // The accelerometer reports support acceleration: negate it for downhill gravity.
+    deviceGravity.set(-measured.x, -measured.y, -measured.z);
+    if (hasLinear) deviceGravity.add(new THREE.Vector3(linear.x, linear.y, linear.z));
+    lastMotion = performance.now();
+  });
   function onOrientation(e) {
     if (![e.alpha, e.beta, e.gamma].every(Number.isFinite)) return;
     state.current = orientationQuaternion(e.alpha,e.beta,e.gamma,screen.orientation?.angle ?? 0);
@@ -167,8 +180,15 @@ function init() {
     else if (!preview && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       permission = DeviceOrientationEvent.requestPermission();
     }
+    // Physics scenes need the accelerometer even when the eye uses touch or camera.
+    let motionPermission;
+    try {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        motionPermission = DeviceMotionEvent.requestPermission();
+      }
+    } catch { /* Unavailable sensors leave scene physics inactive. */ }
     const fullscreen = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' });
-    const results = await Promise.allSettled([fullscreen,permission]);
+    const results = await Promise.allSettled([fullscreen,permission,motionPermission]);
     if (preview) {
       $('guidance').innerHTML = 'Drag anywhere in the room to explore the perspective.<br><strong>Open on your phone for the motion-tracked experience.</strong>';
     } else if (face) {
@@ -366,7 +386,12 @@ function init() {
     // Face tracking is already filtered; only smooth the steps between camera frames.
     if(valid) eye.lerp(target,1-Math.exp(-dt*(state.mode==='face'?60:35)));
     applyWindowProjection(camera,eye,width,height);
-    live?.update?.(dt,time/1000);
+    // Device motion uses native device axes; rotate into the current screen axes.
+    const angle = THREE.MathUtils.degToRad(screen.orientation?.angle ?? window.orientation ?? 0);
+    const c = Math.cos(angle), s = Math.sin(angle);
+    sceneGravity.set(c * deviceGravity.x - s * deviceGravity.y,
+      s * deviceGravity.x + c * deviceGravity.y, deviceGravity.z);
+    live?.update?.(dt,time/1000,time-lastMotion<1500 && !document.hidden ? sceneGravity : null);
     renderer.render(scene,camera);
     const fresh=time-state.lastSensor<2000;
     const status=!valid?'FACE THE SCREEN':state.mode==='face'?(!state.face?'STARTING CAMERA':time-state.lastFace<500?`FACE TRACKING · ${Math.round(eye.length()*100)} CM`:'LOOKING FOR YOUR FACE'):state.mode==='sensor'?(state.baseline?(fresh?'MOTION TRACKING':'SENSOR PAUSED'):'WAITING FOR SENSOR'):'DRAG TO EXPLORE';

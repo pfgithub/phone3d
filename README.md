@@ -30,6 +30,8 @@ Deploy `dist/` to an HTTPS static host. There is no server-side component.
 4. Keep your head fixed and rotate the phone around the center of its display. Avoid translating it.
 5. Hide the controls for the clearest view. Try one eye for a stronger illusion.
 
+Choose **Marble maze** in the gallery to roll a marble through a wooden maze to the copper ring. Its physics uses accelerometer gravity independently of view calibration, including in touch and face tracking modes. A flat phone is level; every tilt contributes, with no dead zone. Allow motion access when prompted. Without motion samples the marble stays still; touch only changes the view.
+
 ### Face tracking mode
 
 Tap **Open with face tracking** (or choose it under **Head tracking** in settings). The front camera finds your eye, so the phone can move, tilt, and change distance freely without calibration. Close your left eye; the right eye is tracked by default.

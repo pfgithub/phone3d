@@ -104,7 +104,7 @@ Lighting is shared and lives in `src/main.js`: a hemisphere light plus two weak 
 
 ```js
 return {
-  update(dt, time) {},       // every frame, before render; seconds
+  update(dt, time, gravity) {}, // every frame, before render; seconds
   pointerDown(p) { return true; }, // return true to claim the pointer (no view drag or controls toggle)
   pointerMove(p) {},         // only while a claimed pointer is down
   pointerUp(p) {},           // p is null if the pointer was cancelled
@@ -112,6 +112,8 @@ return {
 ```
 
 `p` is `{ ray, x, y }`: a `THREE.Raycaster` from the eye through the pointer, and where that ray meets the glass (z = 0). Animate by changing transforms or material colors in `update`. Don't create geometry every frame. State that should survive a rebuild (such as a toggle or slider value) can live in plain module-level variables. See `app-interface.js`.
+
+`gravity` is a read-only `THREE.Vector3` in screen coordinates (m/s²), or `null` when motion samples are unavailable or stale. It comes from the accelerometer in every tracking mode and is independent of view calibration. A stationary, face-up phone on a level surface has gravity along -z. Don't retain the vector: the app reuses it every frame.
 
 ### Checklist
 
