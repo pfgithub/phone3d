@@ -2,7 +2,7 @@ export default {
   id: 'pinball-pocket',
   name: 'Pinball pocket',
   description: 'A 15 mm pocket table. Tap either half to flip; tilt to nudge. Glowing bumpers kick toward the glass.',
-  build({ THREE, w, h, size, room, material, glow, box, sphere, ring, chamber }) {
+  build({ THREE, w, h, size, room, material, glow, add, box, sphere, ring, chamber }) {
     chamber(.015, '#102d39');
     const brass = material('#dba855', .7, .25);
     const edge = size * .045;
@@ -15,9 +15,11 @@ export default {
     const ball = sphere(w * .32, -h * .24, -.013 + radius, radius, material('#e7f2f4', .95, .13));
     const bumpers = [[-.22, .18], [.21, .28], [0, -.015]].map(([x, y], i) => {
       const r = size * .075;
-      const disc = sphere(x * w, y * h, -.006, r, material(['#ed6270', '#55d8ca', '#ffb856'][i], .5, .3));
-      disc.scale.z = .65;
-      const halo = ring(x * w, y * h, -.004, r * .82, size * .009, glow('#ffe5a0'));
+      const stem = add(new THREE.CylinderGeometry(r, r, .01, 24), brass, x * w, y * h, -.008);
+      stem.rotation.x = Math.PI / 2;
+      const disc = sphere(x * w, y * h, -.003, r, material(['#ed6270', '#55d8ca', '#ffb856'][i], .5, .3));
+      disc.scale.z = .003 / r;
+      const halo = ring(x * w, y * h, -.0004, r * .82, size * .009, glow('#ffe5a0'));
       return { x: x * w, y: y * h, r, disc, halo, pop: 0 };
     });
     const flippers = [-1, 1].map(side => {
@@ -54,8 +56,8 @@ export default {
         dt = Math.min(dt, .05);
         for (const bumper of bumpers) {
           bumper.pop = Math.max(0, bumper.pop - dt * 5);
-          bumper.disc.position.z = -.006 + bumper.pop * .002;
-          bumper.halo.position.z = -.004 + bumper.pop * .002;
+          bumper.disc.position.z = -.003 + bumper.pop * .002;
+          bumper.halo.position.z = -.0004 + bumper.pop * .002;
           bumper.halo.material.color.set(bumper.pop > 0 ? '#ffffff' : '#ffe5a0');
         }
         for (const f of flippers) {

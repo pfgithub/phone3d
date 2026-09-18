@@ -21,15 +21,16 @@ export default {
     aperture(-w * .37, w * .37, -h * .035, h * .36);
     aperture(-w * .34, w * .34, -h * .4, -h * .16);
     add(new THREE.ExtrudeGeometry(face, { depth: .002, bevelEnabled: false }), brass, 0, 0, -.002);
-    const shearY = h * .13, pinZ = -.014, radius = size * .022;
+    const pinUnit = Math.min(size, h * .72);
+    const shearY = h * .18, pinZ = -.014, radius = size * .022;
     const cylinder = add(new THREE.CylinderGeometry(size * .18, size * .18, w * .72, 40, 1, true, Math.PI / 2, Math.PI), darkBrass, 0, shearY, -.017);
     cylinder.rotation.z = Math.PI / 2; cylinder.material.side = THREE.DoubleSide;
     box(0, shearY, -.017, w * .7, .00035, .0005, glow('#a6e1dc'));
     // This lip hides the deeper reference line head-on; parallax exposes it.
     box(0, shearY, -.003, w * .73, size * .026, .003, brass);
     const pins = Array.from({ length: 5 }, (_, i) => {
-      const x = (i - 2) * w * .135, target = size * [.055, .095, .035, .078, .115][i];
-      const joint = shearY - target, lowerLength = size * .115, upperLength = size * .095;
+      const x = (i - 2) * w * .135, target = pinUnit * [.055, .095, .035, .078, .115][i];
+      const joint = shearY - target, lowerLength = pinUnit * .115, upperLength = pinUnit * .095;
       const group = new THREE.Group(); room.add(group);
       const pinMat = material('#d7b766', .75, .25);
       const lower = add(new THREE.CylinderGeometry(radius, radius, lowerLength, 16), pinMat, x, joint - lowerLength / 2, pinZ); group.add(lower);
@@ -41,6 +42,8 @@ export default {
         springPoints.push([Math.cos(a) * radius * .65, k / 80, Math.sin(a) * radius * .65]);
       }
       const spring = lines(springPoints, '#b7bdc3');
+      spring.position.set(x, joint + upperLength, pinZ);
+      spring.scale.y = shearY + pinUnit * .15 - joint - upperLength;
       const light = sphere(x, h * .39, -.0002, size * .013, glow('#554b30'));
       return { group, lower, foot, spring, pinMat, light, x, joint, upperLength, target, lift: 0, set: false };
     });
@@ -78,7 +81,7 @@ export default {
       },
       pointerMove(p) {
         if (selected && !selected.set && p.ray.ray.intersectPlane(dragPlane, point)) {
-          const lift = THREE.MathUtils.clamp(startLift + point.y - startY, 0, size * .14);
+          const lift = THREE.MathUtils.clamp(startLift + point.y - startY, 0, pinUnit * .14);
           if (Math.abs(lift - selected.target) < .0006 || (selected.lift < selected.target && lift >= selected.target)) {
             selected.lift = selected.target; selected.set = true; selected.light.material.color.set('#a6ffe2'); selected.pinMat.color.set('#d4efb7');
           } else selected.lift = lift;
@@ -101,7 +104,7 @@ export default {
           pin.group.position.y = pin.lift;
           const bottom = pin.joint + pin.upperLength + pin.lift;
           pin.spring.position.set(pin.x, bottom, pinZ);
-          pin.spring.scale.y = Math.max(.0005, shearY + size * .15 - bottom);
+          pin.spring.scale.y = Math.max(.0005, shearY + pinUnit * .15 - bottom);
         }
         if (open) turn += (Math.PI / 2 - turn) * Math.min(1, dt * 7);
         key.rotation.z = -turn;

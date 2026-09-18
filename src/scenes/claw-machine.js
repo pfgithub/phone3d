@@ -34,11 +34,13 @@ export default {
     });
     const rail = box(0, h * .1, -.004, w * .84, .001, .001, chrome);
     const cable = box(0, h * .1, -.006, .0005, .0005, 1, chrome);
+    cable.scale.z = .006;
     const claw = new THREE.Group(); room.add(claw); claw.position.set(0, h * .1, -.009);
     const hub = sphere(0, 0, 0, size * .028, chrome); claw.add(hub);
     const fingers = Array.from({ length: 3 }, (_, i) => {
       const theta = i * Math.PI * 2 / 3;
       const finger = box(0, 0, 0, size * .015, size * .015, .007, chrome); claw.add(finger);
+      finger.position.set(Math.cos(theta) * size * .077, Math.sin(theta) * size * .077, -.004);
       finger.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(Math.cos(theta) * .35, Math.sin(theta) * .35, 1).normalize());
       return { finger, theta };
     });

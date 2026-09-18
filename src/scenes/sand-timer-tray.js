@@ -10,7 +10,7 @@ export default {
       box(0, side * (h - rim) / 2, -.0035, w, rim, .007, wood);
     }
     const sw = w - rim * 2, sh = h - rim * 2;
-    box(0, 0, -.003, sw, sh, .002, material('#bb945a', .02, 1));
+    box(0, 0, -.005, sw, sh, .002, material('#bb945a', .02, 1));
     const nx = Math.min(130, Math.max(40, Math.round(sw / size * 85)));
     const ny = Math.min(180, Math.max(40, Math.round(sh / size * 85)));
     const geometry = new THREE.PlaneGeometry(sw, sh, nx, ny);

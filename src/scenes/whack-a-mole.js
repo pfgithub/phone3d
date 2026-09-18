@@ -20,7 +20,7 @@ export default {
       sleeve.rotation.x = Math.PI / 2; sleeve.material.side = THREE.DoubleSide;
       sphere(x, y, -.025, radius * 1.1, glow('#111a15')).scale.z = .08;
       ring(x, y, -.0006, radius * 1.23, size * .009, material('#718348', 0, 1));
-      const group = new THREE.Group(); room.add(group); group.position.set(x, y, -.025 + radius);
+      const group = new THREE.Group(); room.add(group); group.position.set(x, y, i === 4 ? .004 - radius : -.025 + radius);
       const body = sphere(0, 0, 0, radius, fur); group.add(body);
       const muzzle = sphere(0, -radius * .2, radius * .86, radius * .37, nose); group.add(muzzle);
       for (const s of [-1, 1]) {
@@ -28,7 +28,7 @@ export default {
         const eye = sphere(s * radius * .32, radius * .23, radius * .88, radius * .11, dark); group.add(eye);
         const glint = sphere(s * radius * .32, radius * .26, radius * .99, radius * .035, glow('#fff3cf')); group.add(glint);
       }
-      return { group, body, age: i === 4 ? .22 : -1, hit: false };
+      return { group, body, age: i === 4 ? .4 : -1, hit: false };
     });
     box(0, h * .405, .0002, w * .62, h * .105, .001, material('#233c30', .1));
     const digitWidth = Math.min(w * .12, h * .035), digitHeight = h * .065;

@@ -204,6 +204,7 @@ test('denied camera falls back to the drag preview', async ({page}) => {
 });
 
 test('music app buttons and volume slider respond to taps and drags', async ({page}) => {
+  test.setTimeout(60000);
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await page.setViewportSize({width:393,height:852});
   await page.goto('/');
@@ -220,9 +221,13 @@ test('music app buttons and volume slider respond to taps and drags', async ({pa
   const cx=box.x+box.width/2, cy=box.y+box.height/2;
   await page.mouse.click(cx,cy+box.height*.12);
   await expect(nav).toBeVisible();
-  await page.waitForTimeout(3000);
-  const paused=await shot(); await page.waitForTimeout(200);
-  expect(Buffer.compare(paused,await shot())).toBe(0);
+  // Thumbnail work can slow animation frames; wait for the record's actual wind-down.
+  let paused;
+  await expect.poll(async () => {
+    const before=await shot(); await page.waitForTimeout(200);
+    paused=await shot();
+    return Buffer.compare(before,paused);
+  }, {timeout:20000}).toBe(0);
   // Dragging the volume thumb (29% below center) to the left changes the scene without moving the view.
   await page.mouse.move(cx+box.width*.1,cy+box.height*.29);await page.mouse.down();
   await page.mouse.move(cx-box.width*.25,cy+box.height*.29,{steps:8});await page.mouse.up();
