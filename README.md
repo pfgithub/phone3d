@@ -30,6 +30,12 @@ Deploy `dist/` to an HTTPS static host. There is no server-side component.
 4. Keep your head fixed and rotate the phone around the center of its display. Avoid translating it.
 5. Hide the controls for the clearest view. Try one eye for a stronger illusion.
 
+### Face tracking mode
+
+Tap **Open with face tracking** (or choose it under **Head tracking** in settings). The front camera finds your eye, so the phone can move, tilt, and change distance freely without calibration. Close your left eye; the right eye is tracked by default.
+
+Defaults are set for a **Pixel 9a**: 6.3" display, 96.1° diagonal front-camera field of view (4:3 sensor), lens 4.5 mm below the top edge of the display, 63 mm eye spacing. If depth feels too strong or too weak, set your own interpupillary distance (IPD). If sideways motion feels off, adjust the camera field of view. The camera needs HTTPS, and video never leaves the device. The MediaPipe runtime and model are loaded from jsDelivr and Google's model storage on first use.
+
 The settings dialog adjusts screen diagonal and eye distance. The aspect ratio is fixed at 20:9, with 6.3 inches as the default diagonal (approximately 65.7 × 145.9 mm). Landscape is supported; after a screen orientation change, hold it straight on and recalibrate. Fullscreen must fill the physical display for accurate scale; browser/device reserved areas can reduce accuracy.
 
 ## Geometry
@@ -47,6 +53,8 @@ top    = n * ( height/2 - e.y) / e.z
 
 This keeps every point on the screen plane at the same display pixel as the phone rotates. A conventional look-at camera would distort that mapping. Quaternion conversion follows the W3C intrinsic Z–X–Y rotation order, corrected for the screen's orientation angle. Light frame-rate-independent smoothing reduces sensor jitter. At grazing angles past roughly 81°, rendering holds the last valid view and asks the viewer to face the screen.
 
-This is a single-view motion-parallax illusion, not binocular stereo or head tracking. Phone translation, head movement, sensor drift, sensor latency, incorrect physical dimensions, and rotation around a different pivot reduce accuracy. Calibration resets the orientation reference; it does not measure eye position. Tests cover geometry and synthetic browser events; real Android sensor behavior and visual alignment still require hardware validation.
+**Face tracking.** MediaPipe Face Landmarker gives both iris centers in the camera image. Each becomes a ray from the camera lens, whose position is known in screen coordinates and rotates with screen orientation. Both eyes are placed on their rays, `IPD` apart, with the line between them perpendicular to the gaze toward the screen center. This fixes the distance even when you view the phone off-axis. The chosen eye, after One Euro filtering, becomes `e` directly.
+
+In motion-sensor mode this is a single-view motion-parallax illusion, not binocular stereo or head tracking. Phone translation, head movement, sensor drift, sensor latency, incorrect physical dimensions, and rotation around a different pivot reduce accuracy. Calibration resets the orientation reference; it does not measure eye position. Tests cover geometry and synthetic browser events; real Android sensor behavior and visual alignment still require hardware validation.
 
 References: [W3C Device Orientation](https://www.w3.org/TR/orientation-event/), [Three.js Matrix4 projection](https://threejs.org/docs/pages/Matrix4.html).

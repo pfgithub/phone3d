@@ -119,3 +119,40 @@ test('every scene renders and the picker survives hiding controls and resize', a
   await expect(picker).toHaveValue(last);
   expect(errors).toEqual([]);
 });
+
+test('face tracking follows the eye from the front camera', async ({page}) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(() => {
+    // Stand-in for MediaPipe: iris centers in normalized image coordinates.
+    window.irises=[{x:.45,y:.5},{x:.55,y:.5}];
+    window.parallaxFaceTracker=async()=>({detect:()=>window.irises,close(){}});
+  });
+  await page.setViewportSize({width:393,height:852});
+  await page.goto('/');
+  await page.getByRole('button',{name:'Open with face tracking'}).click();
+  await expect(page.locator('#tracking')).toContainText('FACE TRACKING');
+  await expect(page.locator('#calibrate')).not.toBeVisible();
+  await page.waitForTimeout(300);
+  const shot=()=>page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
+  const initial=await shot();
+  await page.evaluate(()=>{window.irises=[{x:.25,y:.4},{x:.33,y:.4}];});
+  await page.waitForTimeout(400);
+  expect(Buffer.compare(initial,await shot())).not.toBe(0);
+  await page.evaluate(()=>{window.irises=null;});
+  await expect(page.locator('#tracking')).toContainText('LOOKING FOR YOUR FACE');
+  await page.getByRole('button',{name:'Open display settings'}).click();
+  await expect(page.locator('#tracking-mode')).toHaveValue('face');
+  await expect(page.locator('#eye')).toHaveValue('right');
+  await page.locator('#tracking-mode').selectOption('motion');
+  await page.getByRole('button',{name:'Apply settings'}).click();
+  await expect(page.locator('#calibrate')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('denied camera falls back to the drag preview', async ({page}) => {
+  await page.addInitScript(() => { navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('no','NotAllowedError');}; });
+  await page.goto('/');
+  await page.getByRole('button',{name:'Open with face tracking'}).click();
+  await expect(page.locator('#tracking')).toContainText('DRAG TO EXPLORE');
+  await expect(page.locator('#live-message')).toContainText('Camera access was denied');
+});
