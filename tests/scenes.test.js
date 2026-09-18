@@ -40,7 +40,7 @@ for(const landscape of [false,true]) {
   });
 }
 
-// Runs automatically for every scene registered in src/scenes/index.js.
+// Runs automatically for every scene registered in src/scenes/list.js.
 test('scene ids are unique and every scene has a name and description', () => {
   assert.equal(new Set(SCENES.map(s=>s.id)).size,SCENES.length);
   for(const s of SCENES) {
