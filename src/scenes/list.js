@@ -54,6 +54,7 @@ import milledChannels from './milled-channels.js';
 import leatherInlay from './leather-inlay.js';
 import jadeLeaves from './jade-leaves.js';
 import paperRelief from './paper-relief.js';
+import lockScreen from './lock-screen.js';
 
 // Favourites come first, in this order; the first is shown on load. Then interactive scenes (touch or
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
@@ -66,7 +67,7 @@ const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, or
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout,
-  ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief];
+  ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
