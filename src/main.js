@@ -186,6 +186,7 @@ function init() {
         }
       }, 3500);
     }
+    updateFullscreenButton();
     if (results[0].status === 'rejected' || !document.fullscreenElement) {
       message('Fullscreen unavailable. Perspective is a preview until fullscreen is enabled.', 6500);
     }
@@ -215,7 +216,12 @@ function init() {
   $('demo').addEventListener('click',()=>enter(true));
   $('enter-face').addEventListener('click',()=>enter('face'));
   $('exit').addEventListener('click',exit);
-  document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement && state.immersive) message('Fullscreen exited. Reopen the window for calibrated physical scale.',0); resize(); });
+  // Offer a way back into fullscreen whenever the experience isn't in it.
+  const updateFullscreenButton = () => { $('fullscreen').hidden = !document.fullscreenEnabled || !!document.fullscreenElement; };
+  $('fullscreen').addEventListener('click',()=>{
+    document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).then(()=>message(''),()=>message('Fullscreen unavailable on this browser.',4000));
+  });
+  document.addEventListener('fullscreenchange',()=>{ updateFullscreenButton(); if(!document.fullscreenElement && state.immersive) message('Fullscreen exited. Tap Fullscreen to restore calibrated physical scale.',0); resize(); });
   $('calibrate').addEventListener('click',calibrate);
   $('hide-controls').addEventListener('click',()=>setControls(false));
   $('restore-controls').addEventListener('click',()=>setControls(true));

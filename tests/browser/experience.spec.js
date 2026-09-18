@@ -150,6 +150,16 @@ test('every scene renders and next/previous, gallery, hiding controls and resize
   await expect(nav).toBeVisible();
   expect(await current()).toBe(ids[2]);
   await page.evaluate(async () => { if(document.fullscreenElement) await document.exitFullscreen(); });
+  // Leaving fullscreen offers a button to go back in.
+  const fullscreen=page.getByRole('button',{name:'Enter fullscreen'});
+  if(await page.evaluate(()=>document.fullscreenEnabled)) {
+    await expect(fullscreen).toBeVisible();
+    await fullscreen.click();
+    await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+    await expect(fullscreen).toBeHidden();
+    await page.evaluate(async () => { await document.exitFullscreen(); });
+    await expect(fullscreen).toBeVisible();
+  }
   await page.setViewportSize({width:852,height:393});
   await expect(nav).toBeVisible();
   expect(await current()).toBe(ids[2]);
