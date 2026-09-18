@@ -34,6 +34,18 @@ import tactileLights from './tactile-lights.js';
 import chalkPebbles from './chalk-pebbles.js';
 import pressedSage from './pressed-sage.js';
 import porcelainRipples from './porcelain-ripples.js';
+import pointCloudSculpture from './point-cloud-sculpture.js';
+import louvredCard from './louvred-card.js';
+import hollowMask from './hollow-mask.js';
+import anamorphicScatter from './anamorphic-scatter.js';
+import keyhole from './keyhole.js';
+import hideAndSeekDollhouse from './hide-and-seek-dollhouse.js';
+import shadowBox from './shadow-box.js';
+import rainWindow from './rain-window.js';
+import aquarium from './aquarium.js';
+import popUpBook from './pop-up-book.js';
+import holographicFoilCard from './holographic-foil-card.js';
+import krakenBreakout from './kraken-breakout.js';
 
 // Favourites come first, in this order; the first is shown on load. Everything else follows
 // alphabetically by name. See AGENTS.md to add a scene.
@@ -43,7 +55,8 @@ export const FAVOURITES = [crystal, jellyfish, contourQuarry, appInterface, port
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
-  chalkPebbles, pressedSage, porcelainRipples];
+  chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
+  keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout];
 
 export const OTHERS = ALL.filter(scene => !FAVOURITES.includes(scene)).sort((a, b) => a.name.localeCompare(b.name));
 
