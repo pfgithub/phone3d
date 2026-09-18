@@ -69,3 +69,51 @@ test('denied sensor permission gives a manual fallback', async ({page}) => {
   await expect(page.locator('#tracking')).toContainText('DRAG TO EXPLORE');
   await expect(page.locator('#live-message')).toContainText('Motion access was denied');
 });
+
+test('default distance applies, two decimals work, and invalid edits can be dismissed', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('button',{name:'Explore with touch'}).click();
+  const open = () => page.getByRole('button',{name:'Open display settings'}).click();
+  await open();
+  await expect(page.locator('#distance')).toHaveValue('30.48');
+  await page.getByRole('button',{name:'Apply settings'}).click();
+  await expect(page.locator('#settings')).not.toBeVisible();
+  await open();
+  await page.locator('#distance').fill('35.67');
+  await page.getByRole('button',{name:'Apply settings'}).click();
+  await expect(page.locator('#settings')).not.toBeVisible();
+  await open();
+  await page.locator('#distance').fill('2');
+  await page.getByRole('button',{name:'Apply settings'}).click();
+  await expect(page.locator('#settings')).toBeVisible();
+  await page.getByRole('button',{name:'Close settings'}).click();
+  await expect(page.locator('#settings')).not.toBeVisible();
+  await open();
+  await expect(page.locator('#distance')).toHaveValue('35.67');
+});
+
+test('all six scenes render and the picker survives hiding controls and resize', async ({page}) => {
+  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+  await page.setViewportSize({width:393,height:852});
+  await page.goto('/');
+  await page.getByRole('button',{name:'Explore with touch'}).click();
+  const picker=page.getByLabel('SCENE',{exact:true});
+  await expect(picker.locator('option')).toHaveCount(6);
+  let previous;
+  for(const id of ['light','pocket','crystal','tunnel','garden','orbit']) {
+    await picker.selectOption(id);
+    await page.waitForTimeout(100);
+    const shot=await page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
+    if(previous) expect(Buffer.compare(previous,shot)).not.toBe(0);
+    previous=shot;
+  }
+  await page.getByRole('button',{name:'Hide controls',exact:true}).click();
+  await expect(picker).not.toBeVisible();
+  await page.getByRole('button',{name:'Show controls'}).click();
+  await expect(picker).toHaveValue('orbit');
+  await page.evaluate(async () => { if(document.fullscreenElement) await document.exitFullscreen(); });
+  await page.setViewportSize({width:852,height:393});
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveValue('orbit');
+  expect(errors).toEqual([]);
+});

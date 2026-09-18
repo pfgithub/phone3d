@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { screenDimensions, orientationQuaternion, eyeFromOrientation, applyWindowProjection } from './projection.js';
 import './style.css';
+import { SCENES, buildExtraScene } from './scenes.js';
 
 const $ = (id) => document.getElementById(id);
 const host = $('viewport');
-const state = { immersive: false, mode: 'preview', diagonal: 6.3, distance: .3048, current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0 };
+const state = { scene: 'light', immersive: false, mode: 'preview', diagonal: 6.3, distance: .3048, current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0 };
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -54,11 +55,17 @@ function init() {
   }
   function rebuild() {
     if (room) {
-      room.traverse(obj => { obj.geometry?.dispose(); if (obj.userData.ownMaterial) obj.material.dispose(); });
+      const ownedMaterials = new Set();
+      room.traverse(obj => { obj.geometry?.dispose(); if (obj.userData.ownMaterial) ownedMaterials.add(obj.material); });
+      ownedMaterials.forEach(material => material.dispose());
       scene.remove(room);
     }
     room = new THREE.Group(); scene.add(room);
     const w = width, h = height, depth = .145;
+    if (state.scene !== 'light') {
+      buildExtraScene(state.scene, room, w, h);
+      return;
+    }
     box(0,0,-depth-.001,w,h,.002,materials.back);
     box(-w/2-.001,0,-depth/2,.002,h,depth,materials.wall);
     box(w/2+.001,0,-depth/2,.002,h,depth,materials.wall);
@@ -145,7 +152,7 @@ function init() {
   }
   function setControls(visible) {
     state.controls = visible;
-    document.querySelectorAll('.experience-top,.experience-bottom,.guidance').forEach(el => { el.hidden = !visible; });
+    document.querySelectorAll('.experience-top,.experience-bottom,.guidance,.scene-control').forEach(el => { el.hidden = !visible; });
     $('restore-controls').hidden = visible;
   }
   async function enter(preview = false) {
@@ -205,7 +212,7 @@ function init() {
   $('calibrate').addEventListener('click',calibrate);
   $('hide-controls').addEventListener('click',()=>setControls(false));
   $('restore-controls').addEventListener('click',()=>setControls(true));
-  $('settings-open').addEventListener('click',()=>{ $('settings').returnValue=''; $('settings').showModal(); });
+  $('settings-open').addEventListener('click',()=>{ $('diagonal').value=state.diagonal; $('distance').value=Number((state.distance*100).toFixed(2)); $('settings').returnValue=''; $('settings').showModal(); });
   $('settings').addEventListener('close',()=>{
     if($('settings').returnValue==='apply') {
       state.diagonal=Number($('diagonal').value);state.distance=Number($('distance').value)/100;resize();calibrate();
@@ -225,6 +232,19 @@ function init() {
   });
   host.addEventListener('pointerup',()=>{pointer=null;});
   host.addEventListener('pointercancel',()=>{pointer=null;});
+  for (const item of SCENES) {
+    const option = document.createElement('option');
+    option.value = item.id; option.textContent = item.name;
+    $('scene-select').appendChild(option);
+  }
+  $('scene-select').addEventListener('change', () => {
+    state.scene = $('scene-select').value;
+    const selected = SCENES.find(item => item.id === state.scene);
+    $('scene-description').textContent = selected.description;
+    $('preview-name').textContent = selected.name.toUpperCase();
+    host.setAttribute('aria-label', selected.name + ': ' + selected.description);
+    rebuild();
+  });
   resize();
   let lastTime=0, lastStatus='';
   function frame(time) {
