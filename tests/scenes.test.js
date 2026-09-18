@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { Box3, Group } from 'three';
 import { SCENES, buildScene } from '../src/scenes/index.js';
 import { screenDimensions } from '../src/projection.js';
@@ -100,3 +101,40 @@ for (const [width, height] of [[.066, .146], [.146, .066], [.04, .20], [.20, .04
     });
   }
 }
+
+const surfaceScenes = ['deep-well', 'sky-window', 'tide-pools', 'ribbon-weave', 'contour-quarry', 'copper-circuit'];
+for (const id of surfaceScenes) for (const [width, height] of [[.066,.146],[.146,.066],[.04,.20],[.20,.04]]) {
+  test(`${id} anchors a perforated plane at the glass with features on both sides, ${width} x ${height}`, () => {
+    const group = new Group(); buildScene(id, group, width, height);
+    const panel = group.getObjectByName('glass-surface');
+    assert.ok(panel, 'a glass-plane surface must exist');
+    panel.geometry.computeBoundingBox();
+    assert.equal(panel.position.z, 0);
+    assert.equal(panel.geometry.boundingBox.min.z, 0);
+    assert.equal(panel.geometry.boundingBox.max.z, 0);
+    const shape = panel.geometry.parameters.shapes;
+    assert.ok(shape.holes.length > 0, 'recesses must be real openings');
+    for (const hole of shape.holes) for (const p of hole.getPoints()) {
+      assert.ok(Math.abs(p.x) < width/2 && Math.abs(p.y) < height/2, 'openings stay inside the panel');
+    }
+    const bounds = new Box3().setFromObject(group);
+    assert.ok(bounds.min.z < -.003, 'recessed features');
+    assert.ok(bounds.max.z > .002 && bounds.max.z < .015, 'small raised features');
+    const rebuilt = new Group(); buildScene(id, rebuilt, width, height);
+    const fingerprint = root => {
+      const hash = createHash('sha256');
+      root.updateMatrixWorld(true);
+      root.traverse(object => {
+        if (!object.geometry) return;
+        hash.update(JSON.stringify(object.matrixWorld.elements));
+        hash.update(JSON.stringify(Array.from(object.geometry.getAttribute('position').array)));
+      });
+      return hash.digest('hex');
+    };
+    assert.equal(fingerprint(rebuilt), fingerprint(group), 'rebuilds preserve the layout');
+  });
+}
+test('maintenance shaft descends 220 mm below its deck', () => {
+  const group = new Group(); buildScene('deep-well', group, .066, .146);
+  assert.ok(Math.abs(new Box3().setFromObject(group).min.z + .22) < 1e-8);
+});

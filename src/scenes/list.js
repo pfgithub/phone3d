@@ -22,7 +22,14 @@ import splash from './splash.js';
 import pinWave from './pin-wave.js';
 import moire from './moire.js';
 import nautilus from './nautilus.js';
+import deepWell from './deep-well.js';
+import skyWindow from './sky-window.js';
+import tidePools from './tide-pools.js';
+import ribbonWeave from './ribbon-weave.js';
+import contourQuarry from './contour-quarry.js';
+import copperCircuit from './copper-circuit.js';
 
 // Picker order. The first scene is shown on load. See AGENTS.md to add one.
 export const SCENES = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface,
-  jellyfish, clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus];
+  jellyfish, clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus,
+  deepWell, skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit];
