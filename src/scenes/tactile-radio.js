@@ -6,7 +6,7 @@ const stations = ['NIGHT SWIM', 'SOFT SIGNAL', 'SUNDAY FM'];
 export default {
   id: 'tactile-radio',
   name: 'Tactile radio',
-  description: 'A pocket radio at the glass. Drag the ridged tuning wheel, press a station preset, or switch off its glowing dial.',
+  description: 'A pocket radio at the glass. Turn the ridged tuning wheel, press a station preset, or switch off its glowing dial.',
   build(kit) {
     const { w, h, size, glow, ring } = kit;
     const ui = tactileKit(kit, {
@@ -42,10 +42,24 @@ export default {
     }
     dial.group.add(disc(0, 0, .00289, diameter * .31, glow('#f5ebd7')));
     dial.group.add(flat(0, diameter * .21, .00292, size * .012, size * .036, glow('#d6744e')));
-    label('DRAG TO TUNE', cx, cy - size * .255, size * .019, ui.muted);
-    let start = 0, tuning = 0;
-    dial.onDown = p => { start = p.x + p.y; tuning = radio.tuning; };
-    dial.onDrag = p => { radio.tuning = clamp(tuning + (p.x + p.y - start) / (size * .7)); };
+    label('TURN TO TUNE', cx, cy - size * .255, size * .019, ui.muted);
+    // Turn the wheel by dragging around its centre: clockwise tunes up, and
+    // the wheel follows the finger at the same rate as it is drawn rotating.
+    const sweep = Math.PI * 1.65;
+    const angleAt = p => Math.hypot(p.x - cx, p.y - cy) > diameter * .08 ? Math.atan2(p.y - cy, p.x - cx) : null;
+    let last = null;
+    dial.onDown = p => { last = angleAt(p); };
+    dial.onDrag = p => {
+      const angle = angleAt(p);
+      if (angle === null) return;
+      if (last !== null) {
+        let delta = angle - last;
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        radio.tuning = clamp(radio.tuning - delta / sweep);
+      }
+      last = angle;
+    };
 
     const presetY = wide ? -h * .31 : -h * .29;
     const presetW = wide ? w * .10 : w * .19;
