@@ -92,15 +92,15 @@ test('default distance applies, two decimals work, and invalid edits can be dism
   await expect(page.locator('#distance')).toHaveValue('35.67');
 });
 
-test('all six scenes render and the picker survives hiding controls and resize', async ({page}) => {
+test('all nine scenes render and the picker survives hiding controls and resize', async ({page}) => {
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await page.setViewportSize({width:393,height:852});
   await page.goto('/');
   await page.getByRole('button',{name:'Explore with touch'}).click();
   const picker=page.getByLabel('SCENE',{exact:true});
-  await expect(picker.locator('option')).toHaveCount(6);
+  await expect(picker.locator('option')).toHaveCount(9);
   let previous;
-  for(const id of ['light','pocket','crystal','tunnel','garden','orbit']) {
+  for(const id of ['light','relief','portal','terrain','pocket','crystal','tunnel','garden','orbit']) {
     await picker.selectOption(id);
     await page.waitForTimeout(100);
     const shot=await page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});

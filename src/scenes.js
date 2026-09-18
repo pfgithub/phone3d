@@ -2,6 +2,9 @@ import * as THREE from 'three';
 
 export const SCENES = [
   { id: 'light', name: 'The light room', description: 'A 145 mm deep gallery of floating objects.' },
+  { id: 'relief', name: 'At the surface', description: 'A zero-depth panel with pads raised 4 mm and wells recessed 5 mm.' },
+  { id: 'portal', name: 'Another world', description: 'A shallow portal frame opens onto an unbounded alien landscape.' },
+  { id: 'terrain', name: 'River miniature', description: 'A winding river and rolling hills, all within 8 mm beneath the glass.' },
   { id: 'pocket', name: 'Pocket mechanism', description: 'Only 7.5 mm deep. A tiny mechanism beneath the glass.' },
   { id: 'crystal', name: 'Breaking the surface', description: 'A crystal reaches 32 mm out of the screen. Tilt gently.' },
   { id: 'tunnel', name: 'Neon passage', description: 'Follow the illuminated arches 240 mm into the phone.' },
@@ -37,7 +40,87 @@ export function buildExtraScene(id, room, w, h) {
   box(0,-h/2,-.0002,w,.0004,.0004,frame);
   box(0,h/2,-.0002,w,.0004,.0004,frame);
 
-  if (id === 'pocket') {
+  if (id === 'relief') {
+    const panel = new THREE.Shape();
+    panel.moveTo(-w/2,-h/2); panel.lineTo(w/2,-h/2);
+    panel.lineTo(w/2,h/2); panel.lineTo(-w/2,h/2); panel.closePath();
+    const wells = [[-.22*w,.22*h,size*.105],[.2*w,-.23*h,size*.14]];
+    const ceramic = material('#b4d5cb',.1,.65), inset = material('#335c64',.25,.5);
+    for (const [x,y,r] of wells) {
+      const hole = new THREE.Path(); hole.absarc(x,y,r,0,Math.PI*2,true); panel.holes.push(hole);
+      const wall = new THREE.CylinderGeometry(r,r,.005,64,1,true);
+      const wallMat = material('#5e8e90',.25,.55); wallMat.side = THREE.DoubleSide;
+      const well = add(wall,wallMat,x,y,-.0025); well.rotation.x = Math.PI/2;
+      add(new THREE.CircleGeometry(r,64),inset,x,y,-.005);
+      ring(x,y,-.0045,r*.65,.00025,glow('#a1e8d6'));
+    }
+    add(new THREE.ShapeGeometry(panel,64),ceramic,0,0,0);
+    for (const [x,y,r,depth] of [[.2*w,.24*h,size*.13,.004],[-.2*w,-.2*h,size*.1,.0025],[0,0,size*.075,.0015]]) {
+      const pad = add(new THREE.CylinderGeometry(r,r,depth,64),material('#e5ba80',.35,.35),x,y,depth/2);
+      pad.rotation.x = Math.PI/2;
+      ring(x,y,depth-.0002,r*.72,.0002,glow('#ffedc7'));
+    }
+  } else if (id === 'portal') {
+    // Only the frame has side faces: the world extends beyond the aperture.
+    const stone = material('#52617c',.5,.4), edge = glow('#b7f6ef');
+    const t = .002;
+    for (const sign of [-1,1]) {
+      box(sign*(w/2-t/2),0,-.0015,t,h,.003,stone);
+      box(0,sign*(h/2-t/2),-.0015,w,t,.003,stone);
+      box(sign*(w/2-t),0,-.0001,.00035,h-2*t,.0002,edge);
+      box(0,sign*(h/2-t),-.0001,w-2*t,.00035,.0002,edge);
+    }
+    add(new THREE.PlaneGeometry(w*12,h*12),glow('#35365e'),0,0,-.6);
+    sphere(w*.8,h*.65,-.48,size*.48,glow('#f5c5a0'));
+    const halo = ring(w*.8,h*.65,-.475,size*.65,.001,glow('#aa86b4')); halo.rotation.z=.3;
+    // Overlapping mountain silhouettes stretch sideways, with no enclosing walls.
+    for(let layer=0;layer<4;layer++) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-w*4,-h*4);
+      for(let i=0;i<=32;i++) {
+        const x=-w*4+i*w/4;
+        const y=h*(.12-layer*.14)+Math.sin(i*1.7+layer)*h*.13+Math.cos(i*.7)*h*.09;
+        shape.lineTo(x,y);
+      }
+      shape.lineTo(w*4,-h*4); shape.closePath();
+      add(new THREE.ShapeGeometry(shape),glow(['#66658b','#577a8a','#376875','#214c5b'][layer]),0,0,-.36+layer*.075);
+    }
+    for(let i=0;i<30;i++) sphere(Math.sin(i*127.1)*w*2,Math.cos(i*31.7)*h,-.42,.0005,glow('#dfd5f4'));
+    for(let i=0;i<9;i++) {
+      const x=Math.sin(i*2.4)*w*.9, y=-h*(.24+(i%3)*.09), z=-.065-(i%3)*.012;
+      const stem=box(x,y,z,.001,size*.12,.001,material('#8b9f99'));
+      sphere(stem.position.x,y+size*.07,z,size*.025,glow('#9debd4'));
+    }
+  } else if (id === 'terrain') {
+    // Height field is parallel to the glass, like a tiny topographic model.
+    const geometry = new THREE.PlaneGeometry(w,h,100,160);
+    const positions = geometry.attributes.position;
+    const colors = [];
+    const water = new THREE.Color('#66bdc6'), sand = new THREE.Color('#d9c79a');
+    const grass = new THREE.Color('#83af83'), rock = new THREE.Color('#647f72');
+    for(let i=0;i<positions.count;i++) {
+      const x=positions.getX(i)/w, y=positions.getY(i)/h;
+      const river=Math.sin(y*9)*.17+Math.sin(y*19)*.035;
+      const bank=Math.abs(x-river);
+      const rise=THREE.MathUtils.smoothstep(bank,.055,.18);
+      const hills=(Math.sin(x*13+y*8)+Math.cos(y*17-x*6)+2)/4;
+      const z=-.0075+rise*(.0015+.005*hills);
+      positions.setZ(i,z);
+      const color=bank<.055 ? water : bank<.08 ? sand : grass.clone().lerp(rock,hills*.7);
+      colors.push(color.r,color.g,color.b);
+    }
+    geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geometry.computeVertexNormals();
+    const ground=material('#ffffff',0,.95); ground.vertexColors=true;
+    add(geometry,ground,0,0,0);
+    // Small boulders stay below the glass and clear of the river.
+    for(let i=0;i<18;i++) {
+      const x=(i%2?1:-1)*w*(.32+.08*Math.sin(i*5)), y=Math.sin(i*2.4)*h*.44;
+      const hills=(Math.sin(x/w*13+y/h*8)+Math.cos(y/h*17-x/w*6)+2)/4;
+      const boulder=add(new THREE.DodecahedronGeometry(.001),material('#c2c7ac',0,.9),x,y,-.006+.005*hills);
+      boulder.scale.set(1.3,.8,.65); boulder.rotation.z=i;
+    }
+  } else if (id === 'pocket') {
     chamber(.0075, '#253c43');
     const brass = material('#e9b76e', .7, .28), steel = material('#87b7bf', .65, .3);
     // Flat gears sit between -6.4 mm and -1.6 mm, including their teeth.
