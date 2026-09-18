@@ -14,7 +14,9 @@ export function makeMarbleMaze({ id, name, description, raised = false }) {
       const rows = Math.min(13, Math.max(5, Math.round(h / size * 5)));
       const cw = boardW / cols, ch = boardH / rows, cell = Math.min(cw, ch);
       const radius = cell * .22, thickness = cell * .12;
-      const floorZ = raised ? 0 : -size * .14, wallHeight = radius * 2.4;
+      const wallHeight = radius * 2.4, capHeight = thickness * .16;
+      // Inset: the brass wall caps are flush with the glass. Raised: the floor is on the glass.
+      const floorZ = raised ? 0 : -(wallHeight + capHeight);
       const left = -boardW / 2, bottom = -boardH / 2;
       const wood = material('#ac7747', .05, .68);
       const rail = material('#d7b47b', .22, .38);
@@ -142,7 +144,7 @@ export function makeMarbleMaze({ id, name, description, raised = false }) {
         function wall(x, y, width, height, outer = false) {
           walls.push({ minX: x - width / 2, maxX: x + width / 2, minY: y - height / 2, maxY: y + height / 2 });
           box(x, y, floorZ + wallHeight / 2, width, height, wallHeight, outer ? edging : rail);
-          box(x, y, floorZ + wallHeight + thickness * .08, width * .8, height * .8, thickness * .16, brass);
+          box(x, y, floorZ + wallHeight + capHeight / 2, width * .8, height * .8, capHeight, brass);
         }
         wall(left, 0, thickness, boardH + thickness, true);
         wall(-left, 0, thickness, boardH + thickness, true);
@@ -161,11 +163,19 @@ export function makeMarbleMaze({ id, name, description, raised = false }) {
       }
       buildLevel();
 
+      // A border flush with the glass fills the screen around the maze, so the board reads as set into the phone.
+      const holeX = (boardW + thickness) / 2, holeY = (boardH + thickness) / 2;
+      const border = new THREE.Shape();
+      border.moveTo(-w / 2, -h / 2); border.lineTo(w / 2, -h / 2); border.lineTo(w / 2, h / 2); border.lineTo(-w / 2, h / 2);
+      border.closePath();
+      border.holes.push(new THREE.Path([new THREE.Vector2(-holeX, -holeY), new THREE.Vector2(-holeX, holeY),
+        new THREE.Vector2(holeX, holeY), new THREE.Vector2(holeX, -holeY)]));
+      add(new THREE.ShapeGeometry(border), material('#4a3528', .15, .6), 0, 0, 0);
       for (const x of [-1, 1]) for (const y of [-1, 1]) {
-        const sx = x * (boardW / 2 + size * .017), sy = y * (boardH / 2 + size * .017);
-        const screw = add(new THREE.CylinderGeometry(size * .008, size * .008, size * .004, 12), brass, sx, sy, floorZ);
+        const sx = x * (holeX + w / 2) / 2, sy = y * (holeY + h / 2) / 2;
+        const screw = add(new THREE.CylinderGeometry(size * .008, size * .008, size * .004, 12), brass, sx, sy, 0);
         screw.rotation.x = Math.PI / 2;
-        box(sx, sy, floorZ + size * .0021, size * .011, size * .0018, size * .0004, edging);
+        box(sx, sy, size * .0021, size * .011, size * .0018, size * .0004, edging);
       }
       const marble = sphere(startX, startY, floorZ + radius, radius,
         new THREE.MeshPhysicalMaterial({ color: '#a5eadc', metalness: .3, roughness: .16, clearcoat: 1 }));
