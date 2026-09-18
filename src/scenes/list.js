@@ -1,3 +1,4 @@
+import bubbleWrap from './bubble-wrap.js';
 import pegSolitaire from './peg-solitaire.js';
 import tilePull from './tile-pull.js';
 import clawMachine from './claw-machine.js';
@@ -73,10 +74,10 @@ import springJoystick from './spring-joystick.js';
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
 export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave];
 
-const INTERACTIVE_SCENES = [pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, sandTimerTray, pinballPocket, appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
+const INTERACTIVE_SCENES = [bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, sandTimerTray, pinballPocket, appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
   thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick];
 
-const ALL = [pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, sandTimerTray, pinballPocket, light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
+const ALL = [bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, sandTimerTray, pinballPocket, light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
