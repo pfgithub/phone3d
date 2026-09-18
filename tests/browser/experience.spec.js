@@ -92,33 +92,67 @@ test('default distance applies, two decimals work, and invalid edits can be dism
   await expect(page.locator('#distance')).toHaveValue('35.67');
 });
 
-test('every scene renders and the picker survives hiding controls and resize', async ({page}) => {
+test('every scene renders and next/previous, gallery, hiding controls and resize work', async ({page}) => {
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await page.setViewportSize({width:393,height:852});
   await page.goto('/');
   await page.getByRole('button',{name:'Explore with touch'}).click();
-  const picker=page.getByLabel('SCENE',{exact:true});
-  const ids=await picker.locator('option').evaluateAll(options=>options.map(o=>o.value));
+  const cards=page.locator('#gallery-grid .gallery-card');
+  const ids=await cards.evaluateAll(els=>els.map(el=>el.dataset.id));
   expect(ids.length).toBeGreaterThan(1);
   // Allow for a WebGL screenshot per scene as the catalog grows.
   test.setTimeout(15000 + ids.length * 3000);
-  const last=ids.at(-1);
-  let previous;
-  for(const id of ids) {
-    await picker.selectOption(id);
+  const shot=()=>page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
+  const current=()=>page.locator('#gallery-grid [aria-current=true]').getAttribute('data-id');
+  let previous=await shot();
+  for(const id of ids.slice(1)) {
+    await page.getByRole('button',{name:'Next scene'}).click();
+    expect(await current()).toBe(id);
     await page.waitForTimeout(100);
-    const shot=await page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
-    if(previous) expect(Buffer.compare(previous,shot)).not.toBe(0);
-    previous=shot;
+    const next=await shot();
+    expect(Buffer.compare(previous,next)).not.toBe(0);
+    previous=next;
   }
+  const last=ids.at(-1);
+  // Next wraps to the first scene and previous wraps back.
+  await page.getByRole('button',{name:'Next scene'}).click();
+  expect(await current()).toBe(ids[0]);
+  await page.getByRole('button',{name:'Previous scene'}).click();
+  expect(await current()).toBe(last);
+  await page.keyboard.press('ArrowRight');
+  expect(await current()).toBe(ids[0]);
+  await page.keyboard.press('ArrowLeft');
+  expect(await current()).toBe(last);
+
+  // The gallery shows a thumbnail per scene and opens the chosen one.
+  await page.getByRole('button',{name:/Browse all scenes/}).click();
+  await expect(page.locator('#gallery')).toBeVisible();
+  await expect(cards.last().locator('img')).toHaveAttribute('src',/^data:image/,{timeout:30000});
+  await cards.nth(2).click();
+  await expect(page.locator('#gallery')).not.toBeVisible();
+  expect(await current()).toBe(ids[2]);
+  await expect(page.locator('#scene-name')).toHaveText(await cards.nth(2).locator('strong').textContent());
+  await expect(page.locator('#experience')).toBeVisible();
+
+  const nav=page.getByRole('button',{name:'Next scene'});
   await page.getByRole('button',{name:'Hide controls',exact:true}).click();
-  await expect(picker).not.toBeVisible();
+  await expect(nav).not.toBeVisible();
+  await expect(page.locator('#calibrate')).not.toBeVisible();
+  await expect(page.locator('#exit')).not.toBeVisible();
+  // A tap anywhere on the room brings them back; a drag doesn't.
+  await page.mouse.move(200,500);await page.mouse.down();await page.mouse.move(300,550,{steps:5});await page.mouse.up();
+  await expect(nav).not.toBeVisible();
+  await page.mouse.click(200,500);
+  await expect(nav).toBeVisible();
+  await page.mouse.click(200,500);
+  await expect(nav).not.toBeVisible();
   await page.getByRole('button',{name:'Show controls'}).click();
-  await expect(picker).toHaveValue(last);
+  await expect(nav).toBeVisible();
+  expect(await current()).toBe(ids[2]);
   await page.evaluate(async () => { if(document.fullscreenElement) await document.exitFullscreen(); });
   await page.setViewportSize({width:852,height:393});
-  await expect(picker).toBeVisible();
-  await expect(picker).toHaveValue(last);
+  await expect(nav).toBeVisible();
+  expect(await current()).toBe(ids[2]);
   expect(errors).toEqual([]);
 });
 

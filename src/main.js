@@ -19,31 +19,41 @@ try {
 }
 if (renderer) init();
 
-function init() {
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  host.appendChild(renderer.domElement);
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#081a20');
-  const camera = new THREE.PerspectiveCamera();
-  scene.add(new THREE.HemisphereLight(0xb8fff1, 0x142124, 2.1));
+function configure(target) {
+  target.outputColorSpace = THREE.SRGBColorSpace;
+  target.toneMapping = THREE.ACESFilmicToneMapping;
+  target.toneMappingExposure = 1.15;
+}
+// Shared background and lighting for the live view and gallery thumbnails.
+function createStage() {
+  const stage = new THREE.Scene();
+  stage.background = new THREE.Color('#081a20');
+  stage.add(new THREE.HemisphereLight(0xb8fff1, 0x142124, 2.1));
   const light = new THREE.PointLight(0xa9ffe9, .065, 2, 1);
   light.position.set(-.025, .05, .02);
-  scene.add(light);
+  stage.add(light);
   const fill = new THREE.PointLight(0x63a8ff, .025, 1, 1);
   fill.position.set(.025, -.03, -.08);
-  scene.add(fill);
+  stage.add(fill);
+  return stage;
+}
+function disposeRoom(room) {
+  const ownedMaterials = new Set();
+  room.traverse(obj => { obj.geometry?.dispose(); if (obj.userData.ownMaterial) ownedMaterials.add(obj.material); });
+  ownedMaterials.forEach(material => material.dispose());
+  room.removeFromParent();
+}
+
+function init() {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  configure(renderer);
+  host.appendChild(renderer.domElement);
+  const scene = createStage();
+  const camera = new THREE.PerspectiveCamera();
   let room, width, height, pointer = null;
   const eye = new THREE.Vector3(0, 0, state.distance);
   function rebuild() {
-    if (room) {
-      const ownedMaterials = new Set();
-      room.traverse(obj => { obj.geometry?.dispose(); if (obj.userData.ownMaterial) ownedMaterials.add(obj.material); });
-      ownedMaterials.forEach(material => material.dispose());
-      scene.remove(room);
-    }
+    if (room) disposeRoom(room);
     room = new THREE.Group(); scene.add(room);
     buildScene(state.scene, room, width, height);
   }
@@ -94,7 +104,7 @@ function init() {
   }
   function setControls(visible) {
     state.controls = visible;
-    document.querySelectorAll('.experience-top,.experience-bottom,.guidance,.scene-control').forEach(el => { el.hidden = !visible; });
+    document.querySelectorAll('.experience-top,.experience-bottom,.guidance,.scene-control,.live-message').forEach(el => { el.hidden = !visible; });
     $('restore-controls').hidden = visible;
   }
   // Front camera face tracking: the eye is measured relative to the screen.
@@ -225,34 +235,94 @@ function init() {
   });
   $('about-open').addEventListener('click',()=>$('about').showModal());
   $('about-close').addEventListener('click',()=>$('about').close());
-  document.addEventListener('keydown',e=>{if(e.key==='Escape' && state.immersive && !$('settings').open) exit();});
+  const dialogOpen = () => $('settings').open || $('gallery').open || $('about').open;
+  document.addEventListener('keydown',e=>{
+    if(!state.immersive || dialogOpen() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if(e.key==='Escape') exit();
+    else if(e.key==='ArrowLeft') stepScene(-1);
+    else if(e.key==='ArrowRight') stepScene(1);
+    else if(e.key==='h' || e.key==='H') setControls(!state.controls);
+  });
+  // A tap (not a drag) on the room toggles the controls while viewing.
   host.addEventListener('pointerdown',e=>{
-    if(state.mode==='sensor'||state.mode==='face')return;
-    pointer={x:e.clientX,y:e.clientY,initialX:state.manualX,initialY:state.manualY};host.setPointerCapture(e.pointerId);
+    pointer={x:e.clientX,y:e.clientY,time:performance.now(),initialX:state.manualX,initialY:state.manualY,drag:state.mode==='manual'};
+    host.setPointerCapture(e.pointerId);
   });
   host.addEventListener('pointermove',e=>{
-    if(!pointer)return;
+    if(!pointer?.drag)return;
     state.manualX=THREE.MathUtils.clamp(pointer.initialX+(e.clientX-pointer.x)/host.clientWidth,-.85,.85);
     state.manualY=THREE.MathUtils.clamp(pointer.initialY+(e.clientY-pointer.y)/host.clientHeight,-.85,.85);
   });
-  host.addEventListener('pointerup',()=>{pointer=null;});
+  host.addEventListener('pointerup',e=>{
+    const tap=pointer && Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)<10 && performance.now()-pointer.time<400;
+    if(tap && state.immersive) setControls(!state.controls);
+    pointer=null;
+  });
   host.addEventListener('pointercancel',()=>{pointer=null;});
-  for (const item of SCENES) {
-    const option = document.createElement('option');
-    option.value = item.id; option.textContent = item.name;
-    $('scene-select').appendChild(option);
-  }
+
+  // Scene gallery and previous/next navigation.
+  const cards = SCENES.map((item, i) => {
+    const card = document.createElement('button');
+    card.className = 'gallery-card'; card.dataset.id = item.id; card.title = item.description;
+    card.innerHTML = '<span class="thumb"><img alt=""></span><small></small><strong></strong>';
+    card.querySelector('small').textContent = String(i + 1).padStart(2, '0');
+    card.querySelector('strong').textContent = item.name;
+    card.addEventListener('click', () => { setScene(item.id); $('gallery').close(); });
+    $('gallery-grid').appendChild(card);
+    return card;
+  });
   function showSceneInfo() {
-    const selected = SCENES.find(item => item.id === state.scene);
+    const index = SCENES.findIndex(item => item.id === state.scene), selected = SCENES[index];
+    $('scene-name').textContent = selected.name;
+    $('scene-open').setAttribute('aria-label', `Scene: ${selected.name}. Browse all scenes`);
+    $('scene-count').textContent = `${String(index + 1).padStart(2, '0')} / ${String(SCENES.length).padStart(2, '0')}`;
     $('scene-description').textContent = selected.description;
     $('preview-name').textContent = selected.name.toUpperCase();
     host.setAttribute('aria-label', selected.name + ': ' + selected.description);
+    cards.forEach(card => card.setAttribute('aria-current', String(card.dataset.id === state.scene)));
   }
-  $('scene-select').addEventListener('change', () => {
-    state.scene = $('scene-select').value;
+  function setScene(id) {
+    if (id === state.scene) return;
+    state.scene = id;
     showSceneInfo();
     rebuild();
+  }
+  function stepScene(delta) {
+    const index = SCENES.findIndex(item => item.id === state.scene);
+    setScene(SCENES[(index + delta + SCENES.length) % SCENES.length].id);
+  }
+  $('scene-prev').addEventListener('click', () => stepScene(-1));
+  $('scene-next').addEventListener('click', () => stepScene(1));
+  $('scene-open').addEventListener('click', () => {
+    $('gallery').showModal();
+    const current = cards.find(card => card.dataset.id === state.scene);
+    current.focus(); current.scrollIntoView({ block: 'center' });
+    renderThumbnails();
   });
+  $('gallery-close').addEventListener('click', () => $('gallery').close());
+  // Thumbnails are rendered once, one per frame, with a small separate renderer.
+  let thumbsStarted = false;
+  function renderThumbnails() {
+    if (thumbsStarted) return;
+    thumbsStarted = true;
+    let thumbRenderer;
+    try { thumbRenderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); } catch { return; }
+    configure(thumbRenderer);
+    thumbRenderer.setSize(240, 320, false);
+    const stage = createStage(), thumbCamera = new THREE.PerspectiveCamera();
+    const h = .146, w = h * 3 / 4;
+    applyWindowProjection(thumbCamera, new THREE.Vector3(.03, .04, .3), w, h);
+    let i = 0;
+    (function next() {
+      const group = new THREE.Group(); stage.add(group);
+      buildScene(SCENES[i].id, group, w, h);
+      thumbRenderer.render(stage, thumbCamera);
+      cards[i].querySelector('img').src = thumbRenderer.domElement.toDataURL('image/jpeg', .85);
+      disposeRoom(group);
+      if (++i < SCENES.length) requestAnimationFrame(next);
+      else { thumbRenderer.dispose(); thumbRenderer.forceContextLoss(); }
+    })();
+  }
   showSceneInfo();
   resize();
   let lastTime=0, lastStatus='';

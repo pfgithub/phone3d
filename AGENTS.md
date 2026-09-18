@@ -10,14 +10,14 @@ Parallax is a motion-tracked 3D "window" for phones, built with Three.js and Vit
 ## Layout
 
 ```
-src/main.js           App: renderer, camera, sensors, UI, scene picker
+src/main.js           App: renderer, camera, sensors, UI, scene picker and gallery
 src/projection.js     Off-axis window projection math
 src/scenes/list.js    Scene list: imports + ordered SCENES array (the only file to edit when adding a scene)
 src/scenes/index.js   Builds a scene by id (no need to touch)
 src/scenes/kit.js     Helpers passed to every scene's build()
 src/scenes/<id>.js    One file per scene
 tests/scenes.test.js  Node tests (geometry bounds; every scene is checked automatically)
-tests/browser/        Playwright tests (every scene in the picker is rendered)
+tests/browser/        Playwright tests (every scene is rendered via next/previous)
 ```
 
 ## Adding a scene
@@ -28,8 +28,8 @@ Adding a scene takes two steps: create one file, then register it in `src/scenes
 
 ```js
 export default {
-  id: 'lanterns',                 // unique, lowercase, a-z 0-9 and '-'; also the <option> value
-  name: 'Paper lanterns',         // shown in the scene picker
+  id: 'lanterns',                 // unique, lowercase, a-z 0-9 and '-'; also the gallery card's data-id
+  name: 'Paper lanterns',         // shown in the scene picker and gallery
   description: 'Glowing lanterns drifting 60 mm behind the glass.', // shown under the picker
   build({ THREE, w, h, size, material, glow, add, box, sphere, ring, lines, chamber, screenFrame }) {
     screenFrame();                // glowing outline at the screen edge (optional)
@@ -53,9 +53,9 @@ import lanterns from './lanterns.js';
 export const SCENES = [light, relief, /* ... */, orbit, lanterns];
 ```
 
-The array order is the picker order. The first entry is the default scene on load.
+The array order is the picker and gallery order (and what next/previous step through). The first entry is the default scene on load.
 
-You don't need to change anything else. The picker, description text, and aria labels come from `SCENES`. The Node tests and the browser test iterate over every registered scene. The browser test also requires that each scene renders differently from the one before it.
+You don't need to change anything else. The picker, gallery (with a thumbnail rendered from `build` at a 3:4 preview size), description text, and aria labels come from `SCENES`. The Node tests and the browser test iterate over every registered scene. The browser test also requires that each scene renders differently from the one before it.
 
 ### Coordinate system and units
 
