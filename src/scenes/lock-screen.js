@@ -6,7 +6,7 @@ const font = new FontLoader().parse(fontData);
 export default {
   id: 'lock-screen',
   name: 'Lock screen',
-  description: 'A layered lock screen: the clock sits right on the glass, with its dusk wallpaper 10 mm behind.',
+  description: 'A layered lock screen: the clock floats 1 mm in front of the glass, the UI sits on it, and dusk dunes fall away behind.',
   build({ THREE, w, h, size, glow, add, box, ring }) {
     const landscape = w > h;
     const ink = glow('#fff4ef');
@@ -14,8 +14,8 @@ export default {
     const cardMaterial = glow('#34364f');
     const edgeMaterial = glow('#55556e');
 
-    // The clock sits exactly on the glass (z = 0); everything else steps back
-    // in a few millimetre layers down to the wallpaper.
+    // The clock floats 1 mm in front of the glass and the rest of the UI sits
+    // on it (z = 0); the dunes step back from 2 to 8 mm, then the wallpaper.
     const wallpaper = new THREE.ShaderMaterial({
       uniforms: {},
       vertexShader: `
@@ -51,9 +51,9 @@ export default {
       shape.closePath();
       add(new THREE.ShapeGeometry(shape), glow(color), 0, 0, depth);
     }
-    dune(-h * .12, -.0088, '#635066', .23);
-    dune(-h * .26, -.0076, '#302d49', .32);
-    dune(-h * .38, -.0064, '#22263e', .15);
+    dune(-h * .12, -.008, '#635066', .23);
+    dune(-h * .26, -.005, '#302d49', .32);
+    dune(-h * .38, -.002, '#22263e', .15);
 
     function rounded(x, y, z, width, height, radius, mat) {
       const shape = new THREE.Shape();
@@ -90,20 +90,20 @@ export default {
     }
 
     // Restrained status details close to the glass.
-    label('PARALLAX', -w * .43, h * .443, -.0012, size * .024, muted, 'left', w * .28);
+    label('PARALLAX', -w * .43, h * .443, 0, size * .024, muted, 'left', w * .28);
     const bar = size * .009;
     for (let i = 0; i < 4; i++) {
       const height = size * (.016 + i * .009);
-      box(w * .33 + i * bar * 1.5, h * .437 + height / 2, -.0012, bar, height, .00005, ink);
+      box(w * .33 + i * bar * 1.5, h * .437 + height / 2, 0, bar, height, .00005, ink);
     }
-    rounded(w * .423, h * .45, -.0012, size * .067, size * .03, size * .007, muted);
-    rounded(w * .42, h * .45, -.00115, size * .049, size * .018, size * .003, ink);
+    rounded(w * .423, h * .45, -.00005, size * .067, size * .03, size * .007, muted);
+    rounded(w * .42, h * .45, 0, size * .049, size * .018, size * .003, ink);
 
     const clockX = landscape ? -w * .235 : 0;
     lock(clockX, h * .355, -.002, size * .015);
-    label('Friday, September 18', clockX, h * .284, -.0025, size * .037, ink, 'center', w * .8);
-    label('9:41', clockX, h * (landscape ? .12 : .19), 0, size * .235, ink, 'center', w * .8);
-    label('18°  Clear skies', clockX, h * (landscape ? -.04 : .09), -.0025, size * .029, muted);
+    label('Friday, September 18', clockX, h * .284, 0, size * .037, ink, 'center', w * .8);
+    label('9:41', clockX, h * (landscape ? .12 : .19), .001, size * .235, ink, 'center', w * .8);
+    label('18°  Clear skies', clockX, h * (landscape ? -.04 : .09), 0, size * .029, muted);
 
     const cardX = landscape ? w * .245 : 0;
     const cardWidth = landscape ? w * .43 : w * .88;
@@ -113,7 +113,7 @@ export default {
     const inset = size * .033;
 
     function notification(y, app, title, detail, time, color, symbol) {
-      const z = -.0045;
+      const z = 0;
       rounded(cardX, y - size * .006, z - .0005, cardWidth, cardHeight, size * .03, glow('#202238'));
       rounded(cardX, y, z - .00004, cardWidth, cardHeight, size * .03, edgeMaterial);
       rounded(cardX, y, z, cardWidth - size * .003, cardHeight - size * .003, size * .029, cardMaterial);
@@ -147,14 +147,14 @@ export default {
     const shortcutX = Math.min(w * .34, size * .65);
     const shortcutRadius = size * .036;
     for (const x of [-shortcutX, shortcutX]) {
-      add(new THREE.CircleGeometry(shortcutRadius, 40), glow('#454359'), x, shortcutY, -.0022);
+      add(new THREE.CircleGeometry(shortcutRadius, 40), glow('#454359'), x, shortcutY, -.0002);
     }
-    rounded(-shortcutX, shortcutY - size * .005, -.002, size * .012, size * .028, size * .004, ink);
-    rounded(-shortcutX, shortcutY + size * .012, -.002, size * .026, size * .011, size * .003, ink);
-    rounded(shortcutX, shortcutY, -.002, size * .042, size * .029, size * .006, ink);
-    rounded(shortcutX - size * .008, shortcutY + size * .017, -.002, size * .016, size * .008, size * .002, ink);
-    ring(shortcutX, shortcutY, -.0019, size * .009, size * .0025, cardMaterial);
-    label('Do Not Disturb', 0, shortcutY, -.003, size * .024, muted, 'center', shortcutX * 1.45);
-    rounded(0, -h * .466, -.001, Math.min(w * .32, size * .5), size * .007, size * .0035, ink);
+    rounded(-shortcutX, shortcutY - size * .005, 0, size * .012, size * .028, size * .004, ink);
+    rounded(-shortcutX, shortcutY + size * .012, 0, size * .026, size * .011, size * .003, ink);
+    rounded(shortcutX, shortcutY, 0, size * .042, size * .029, size * .006, ink);
+    rounded(shortcutX - size * .008, shortcutY + size * .017, 0, size * .016, size * .008, size * .002, ink);
+    ring(shortcutX, shortcutY, .00007, size * .009, size * .0025, cardMaterial);
+    label('Do Not Disturb', 0, shortcutY, 0, size * .024, muted, 'center', shortcutX * 1.45);
+    rounded(0, -h * .466, 0, Math.min(w * .32, size * .5), size * .007, size * .0035, ink);
   },
 };
