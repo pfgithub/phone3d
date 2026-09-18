@@ -50,12 +50,12 @@ function init() {
   host.appendChild(renderer.domElement);
   const scene = createStage();
   const camera = new THREE.PerspectiveCamera();
-  let room, width, height, pointer = null;
+  let room, live = null, width, height, pointer = null;
   const eye = new THREE.Vector3(0, 0, state.distance);
   function rebuild() {
     if (room) disposeRoom(room);
     room = new THREE.Group(); scene.add(room);
-    buildScene(state.scene, room, width, height);
+    live = buildScene(state.scene, room, width, height);
   }
   function resize() {
     if (!state.immersive) {
@@ -243,22 +243,33 @@ function init() {
     else if(e.key==='ArrowRight') stepScene(1);
     else if(e.key==='h' || e.key==='H') setControls(!state.controls);
   });
+  // Interactive scenes get first claim on a pointer, as a ray and its hit on the glass.
+  const raycaster = new THREE.Raycaster(), glass = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  function scenePointer(e) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    raycaster.setFromCamera(new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, 1 - (e.clientY - rect.top) / rect.height * 2), camera);
+    const point = raycaster.ray.intersectPlane(glass, new THREE.Vector3());
+    return { ray: raycaster, x: point?.x ?? NaN, y: point?.y ?? NaN };
+  }
   // A tap (not a drag) on the room toggles the controls while viewing.
   host.addEventListener('pointerdown',e=>{
-    pointer={x:e.clientX,y:e.clientY,time:performance.now(),initialX:state.manualX,initialY:state.manualY,drag:state.mode==='manual'};
+    const claimed=!!live?.pointerDown?.(scenePointer(e));
+    pointer={x:e.clientX,y:e.clientY,time:performance.now(),initialX:state.manualX,initialY:state.manualY,drag:!claimed&&state.mode==='manual',scene:claimed};
     host.setPointerCapture(e.pointerId);
   });
   host.addEventListener('pointermove',e=>{
+    if(pointer?.scene){live?.pointerMove?.(scenePointer(e));return;}
     if(!pointer?.drag)return;
     state.manualX=THREE.MathUtils.clamp(pointer.initialX+(e.clientX-pointer.x)/host.clientWidth,-.85,.85);
     state.manualY=THREE.MathUtils.clamp(pointer.initialY+(e.clientY-pointer.y)/host.clientHeight,-.85,.85);
   });
   host.addEventListener('pointerup',e=>{
+    if(pointer?.scene){live?.pointerUp?.(scenePointer(e));pointer=null;return;}
     const tap=pointer && Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)<10 && performance.now()-pointer.time<400;
     if(tap && state.immersive) setControls(!state.controls);
     pointer=null;
   });
-  host.addEventListener('pointercancel',()=>{pointer=null;});
+  host.addEventListener('pointercancel',()=>{if(pointer?.scene)live?.pointerUp?.(null);pointer=null;});
 
   // Scene gallery and previous/next navigation.
   const cards = SCENES.map((item, i) => {
@@ -349,6 +360,7 @@ function init() {
     // Face tracking is already filtered; only smooth the steps between camera frames.
     if(valid) eye.lerp(target,1-Math.exp(-dt*(state.mode==='face'?60:35)));
     applyWindowProjection(camera,eye,width,height);
+    live?.update?.(dt,time/1000);
     renderer.render(scene,camera);
     const fresh=time-state.lastSensor<2000;
     const status=!valid?'FACE THE SCREEN':state.mode==='face'?(!state.face?'STARTING CAMERA':time-state.lastFace<500?`FACE TRACKING · ${Math.round(eye.length()*100)} CM`:'LOOKING FOR YOUR FACE'):state.mode==='sensor'?(state.baseline?(fresh?'MOTION TRACKING':'SENSOR PAUSED'):'WAITING FOR SENSOR'):'DRAG TO EXPLORE';

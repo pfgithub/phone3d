@@ -96,6 +96,21 @@ The app disposes all geometry, and any material on an object marked `userData.ow
 
 Lighting is shared and lives in `src/main.js`: a hemisphere light plus two weak point lights near the screen. The background is `#081a20`. Scenes normally don't add lights. Use `glow()` for anything that should look self-lit.
 
+### Animation and interaction (optional)
+
+`build` may return an object; every method is optional:
+
+```js
+return {
+  update(dt, time) {},       // every frame, before render; seconds
+  pointerDown(p) { return true; }, // return true to claim the pointer (no view drag or controls toggle)
+  pointerMove(p) {},         // only while a claimed pointer is down
+  pointerUp(p) {},           // p is null if the pointer was cancelled
+};
+```
+
+`p` is `{ ray, x, y }`: a `THREE.Raycaster` from the eye through the pointer, and where that ray meets the glass (z = 0). Animate by changing transforms or material colors in `update`. Don't create geometry every frame. State that should survive a rebuild (such as a toggle or slider value) can live in plain module-level variables. See `app-interface.js`.
+
 ### Depth tests (optional but encouraged)
 
 If the scene makes a physical claim, such as "only 7.5 mm deep", add a bounds test to `tests/scenes.test.js`:

@@ -192,3 +192,40 @@ test('denied camera falls back to the drag preview', async ({page}) => {
   await expect(page.locator('#tracking')).toContainText('DRAG TO EXPLORE');
   await expect(page.locator('#live-message')).toContainText('Camera access was denied');
 });
+
+test('music app buttons and volume slider respond to taps and drags', async ({page}) => {
+  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+  await page.setViewportSize({width:393,height:852});
+  await page.goto('/');
+  await page.getByRole('button',{name:'Explore with touch'}).click();
+  await page.getByRole('button',{name:/Browse all scenes/}).click();
+  await page.locator('#gallery-grid [data-id=app-interface]').click();
+  const shot=()=>page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
+  const nav=page.getByRole('button',{name:'Next scene'});
+  // Playing: the record and level meter keep moving.
+  const a=await shot(); await page.waitForTimeout(200);
+  expect(Buffer.compare(a,await shot())).not.toBe(0);
+  // The play button sits 12% of the height below center; tapping it pauses without toggling the controls.
+  const box=await page.locator('canvas').boundingBox();
+  const cx=box.x+box.width/2, cy=box.y+box.height/2;
+  await page.mouse.click(cx,cy+box.height*.12);
+  await expect(nav).toBeVisible();
+  await page.waitForTimeout(3000);
+  const paused=await shot(); await page.waitForTimeout(200);
+  expect(Buffer.compare(paused,await shot())).toBe(0);
+  // Dragging the volume thumb (29% below center) to the left changes the scene without moving the view.
+  await page.mouse.move(cx+box.width*.1,cy+box.height*.29);await page.mouse.down();
+  await page.mouse.move(cx-box.width*.25,cy+box.height*.29,{steps:8});await page.mouse.up();
+  await page.waitForTimeout(1000);
+  const quieter=await shot();
+  expect(Buffer.compare(paused,quieter)).not.toBe(0);
+  await expect(nav).toBeVisible();
+  // Next track, then resume playback.
+  await page.mouse.click(cx+box.width*.23,cy+box.height*.12);
+  await page.mouse.click(cx,cy+box.height*.12);
+  await page.waitForTimeout(500);
+  const b=await shot(); await page.waitForTimeout(200);
+  expect(Buffer.compare(b,await shot())).not.toBe(0);
+  await expect(nav).toBeVisible();
+  expect(errors).toEqual([]);
+});
