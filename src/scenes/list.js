@@ -55,19 +55,27 @@ import leatherInlay from './leather-inlay.js';
 import jadeLeaves from './jade-leaves.js';
 import paperRelief from './paper-relief.js';
 import lockScreen from './lock-screen.js';
+import thumbwheelBank from './thumbwheel-bank.js';
+import trackballConsole from './trackball-console.js';
+import recessedMixer from './recessed-mixer.js';
+import rockerPanel from './rocker-panel.js';
+import shuttleDial from './shuttle-dial.js';
+import springJoystick from './spring-joystick.js';
 
 // Favourites come first, in this order; the first is shown on load. Then interactive scenes (touch or
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
 export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave];
 
-const INTERACTIVE_SCENES = [appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse];
+const INTERACTIVE_SCENES = [appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick];
 
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout,
-  ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen];
+  ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen,
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
