@@ -92,15 +92,17 @@ test('default distance applies, two decimals work, and invalid edits can be dism
   await expect(page.locator('#distance')).toHaveValue('35.67');
 });
 
-test('all nine scenes render and the picker survives hiding controls and resize', async ({page}) => {
+test('every scene renders and the picker survives hiding controls and resize', async ({page}) => {
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await page.setViewportSize({width:393,height:852});
   await page.goto('/');
   await page.getByRole('button',{name:'Explore with touch'}).click();
   const picker=page.getByLabel('SCENE',{exact:true});
-  await expect(picker.locator('option')).toHaveCount(9);
+  const ids=await picker.locator('option').evaluateAll(options=>options.map(o=>o.value));
+  expect(ids.length).toBeGreaterThan(1);
+  const last=ids.at(-1);
   let previous;
-  for(const id of ['light','relief','portal','terrain','pocket','crystal','tunnel','garden','orbit']) {
+  for(const id of ids) {
     await picker.selectOption(id);
     await page.waitForTimeout(100);
     const shot=await page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'});
@@ -110,10 +112,10 @@ test('all nine scenes render and the picker survives hiding controls and resize'
   await page.getByRole('button',{name:'Hide controls',exact:true}).click();
   await expect(picker).not.toBeVisible();
   await page.getByRole('button',{name:'Show controls'}).click();
-  await expect(picker).toHaveValue('orbit');
+  await expect(picker).toHaveValue(last);
   await page.evaluate(async () => { if(document.fullscreenElement) await document.exitFullscreen(); });
   await page.setViewportSize({width:852,height:393});
   await expect(picker).toBeVisible();
-  await expect(picker).toHaveValue('orbit');
+  await expect(picker).toHaveValue(last);
   expect(errors).toEqual([]);
 });

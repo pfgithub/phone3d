@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { screenDimensions, orientationQuaternion, eyeFromOrientation, applyWindowProjection } from './projection.js';
 import './style.css';
-import { SCENES, buildExtraScene } from './scenes.js';
+import { SCENES, buildScene } from './scenes/index.js';
 
 const $ = (id) => document.getElementById(id);
 const host = $('viewport');
-const state = { scene: 'light', immersive: false, mode: 'preview', diagonal: 6.3, distance: .3048, current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0 };
+const state = { scene: SCENES[0].id, immersive: false, mode: 'preview', diagonal: 6.3, distance: .3048, current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0 };
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -35,24 +35,6 @@ function init() {
   scene.add(fill);
   let room, width, height, pointer = null;
   const eye = new THREE.Vector3(0, 0, state.distance);
-  const materials = {
-    wall: new THREE.MeshStandardMaterial({ color: '#233c40', roughness: .87, side: THREE.DoubleSide }),
-    back: new THREE.MeshStandardMaterial({ color: '#15333a', roughness: .9 }),
-    mint: new THREE.MeshStandardMaterial({ color: '#c4efd1', metalness: .35, roughness: .24 }),
-    dark: new THREE.MeshStandardMaterial({ color: '#25585c', metalness: .75, roughness: .23 }),
-    gold: new THREE.MeshStandardMaterial({ color: '#ecbb7c', metalness: .5, roughness: .3 }),
-    glow: new THREE.MeshBasicMaterial({ color: '#baffdd' }),
-    plinth: new THREE.MeshStandardMaterial({ color: '#42676a', metalness: .15, roughness: .65 }),
-  };
-  function box(x, y, z, w, h, d, material) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-    mesh.position.set(x, y, z); room.add(mesh); return mesh;
-  }
-  function lines(points, color, opacity = 1) {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(...p)));
-    const material = new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity });
-    const result = new THREE.LineSegments(geometry, material); result.userData.ownMaterial = true; room.add(result);
-  }
   function rebuild() {
     if (room) {
       const ownedMaterials = new Set();
@@ -61,49 +43,7 @@ function init() {
       scene.remove(room);
     }
     room = new THREE.Group(); scene.add(room);
-    const w = width, h = height, depth = .145;
-    if (state.scene !== 'light') {
-      buildExtraScene(state.scene, room, w, h);
-      return;
-    }
-    box(0,0,-depth-.001,w,h,.002,materials.back);
-    box(-w/2-.001,0,-depth/2,.002,h,depth,materials.wall);
-    box(w/2+.001,0,-depth/2,.002,h,depth,materials.wall);
-    box(0,-h/2-.001,-depth/2,w,.002,depth,materials.wall);
-    box(0,h/2+.001,-depth/2,w,.002,depth,materials.wall);
-    const grid = [], step = .012;
-    for(let x=-w/2; x<=w/2; x+=step){
-      grid.push([x,-h/2,-depth+.0001],[x,h/2,-depth+.0001]);
-      grid.push([x,-h/2+.0001,0],[x,-h/2+.0001,-depth]);
-      grid.push([x,h/2-.0001,0],[x,h/2-.0001,-depth]);
-    }
-    for(let y=-h/2; y<=h/2; y+=step){
-      grid.push([-w/2,y,-depth+.0001],[w/2,y,-depth+.0001]);
-      grid.push([-w/2+.0001,y,0],[-w/2+.0001,y,-depth]);
-      grid.push([w/2-.0001,y,0],[w/2-.0001,y,-depth]);
-    }
-    for(let z=0; z>=-depth; z-=step){
-      grid.push([-w/2+.0001,-h/2,z],[-w/2+.0001,h/2,z],[w/2-.0001,-h/2,z],[w/2-.0001,h/2,z]);
-      grid.push([-w/2,-h/2+.0001,z],[w/2,-h/2+.0001,z],[-w/2,h/2-.0001,z],[w/2,h/2-.0001,z]);
-    }
-    lines(grid, '#6ca3a5', .26);
-    // Two luminous rails carry the eye from the glass to the back wall.
-    box(-w/2+.001,-h/2+.002,-depth/2,.0008,.0008,depth,materials.glow);
-    box(w/2-.001,h/2-.002,-depth/2,.0008,.0008,depth,materials.glow);
-    const size = Math.min(w, h);
-    const pedestalHeight = h*.16;
-    box(0,-h/2+pedestalHeight/2,-.073,size*.47,pedestalHeight,size*.43,materials.plinth);
-    box(0,-h/2+pedestalHeight+.0005,-.073,size*.48,.001,size*.44,materials.glow);
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(size*.17,48,32), materials.mint);
-    orb.position.set(size*.06,-h*.05,-.063);room.add(orb);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(size*.29,size*.012,12,96), materials.mint);
-    ring.position.set(-size*.03,h*.08,-.084);ring.rotation.set(.45,-.5,-.3);room.add(ring);
-    const satellite = new THREE.Mesh(new THREE.IcosahedronGeometry(size*.075,0),materials.gold);
-    satellite.position.set(-size*.26,h*.24,-.04);satellite.rotation.set(.3,.5,.2);room.add(satellite);
-    const cube = box(size*.28,-h*.25,-.035,size*.13,size*.13,size*.13,materials.dark);
-    cube.rotation.set(.35,.6,.15);
-    // A thin frame lives exactly on the physical screen plane.
-    lines([[-w/2,-h/2,0],[w/2,-h/2,0],[w/2,-h/2,0],[w/2,h/2,0],[w/2,h/2,0],[-w/2,h/2,0],[-w/2,h/2,0],[-w/2,-h/2,0]],'#9bccc1',.7);
+    buildScene(state.scene, room, width, height);
   }
   function resize() {
     if (!state.immersive) {
@@ -237,14 +177,18 @@ function init() {
     option.value = item.id; option.textContent = item.name;
     $('scene-select').appendChild(option);
   }
-  $('scene-select').addEventListener('change', () => {
-    state.scene = $('scene-select').value;
+  function showSceneInfo() {
     const selected = SCENES.find(item => item.id === state.scene);
     $('scene-description').textContent = selected.description;
     $('preview-name').textContent = selected.name.toUpperCase();
     host.setAttribute('aria-label', selected.name + ': ' + selected.description);
+  }
+  $('scene-select').addEventListener('change', () => {
+    state.scene = $('scene-select').value;
+    showSceneInfo();
     rebuild();
   });
+  showSceneInfo();
   resize();
   let lastTime=0, lastStatus='';
   function frame(time) {
