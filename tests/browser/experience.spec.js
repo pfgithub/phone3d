@@ -100,6 +100,8 @@ test('every scene renders and the picker survives hiding controls and resize', a
   const picker=page.getByLabel('SCENE',{exact:true});
   const ids=await picker.locator('option').evaluateAll(options=>options.map(o=>o.value));
   expect(ids.length).toBeGreaterThan(1);
+  // Allow for a WebGL screenshot per scene as the catalog grows.
+  test.setTimeout(15000 + ids.length * 3000);
   const last=ids.at(-1);
   let previous;
   for(const id of ids) {
