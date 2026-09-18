@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { screenDimensions, orientationQuaternion, eyeFromOrientation, applyWindowProjection } from './projection.js';
 import './style.css';
-import { SCENES, buildScene } from './scenes/index.js';
+import { SCENES, FAVOURITES, buildScene } from './scenes/index.js';
 import { PIXEL_9A, eyeFromIrises, OneEuroVector, createFaceTracker } from './facetrack.js';
 
 const $ = (id) => document.getElementById(id);
@@ -262,6 +262,12 @@ function init() {
 
   // Scene gallery and previous/next navigation.
   const cards = SCENES.map((item, i) => {
+    if (i === 0 || i === FAVOURITES.length) {
+      const heading = document.createElement('h3');
+      heading.className = 'gallery-section';
+      heading.textContent = i === 0 ? 'Favourites' : 'Everything else';
+      $('gallery-grid').appendChild(heading);
+    }
     const card = document.createElement('button');
     card.className = 'gallery-card'; card.dataset.id = item.id; card.title = item.description;
     card.innerHTML = '<span class="thumb"><img alt=""></span><small></small><strong></strong>';

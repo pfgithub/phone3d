@@ -29,7 +29,16 @@ import ribbonWeave from './ribbon-weave.js';
 import contourQuarry from './contour-quarry.js';
 import copperCircuit from './copper-circuit.js';
 
-// Picker order. The first scene is shown on load. See AGENTS.md to add one.
-export const SCENES = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface,
-  jellyfish, clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus,
-  deepWell, skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit];
+// Favourites come first, in this order; the first is shown on load. Everything else follows
+// alphabetically by name. See AGENTS.md to add a scene.
+export const FAVOURITES = [crystal, jellyfish, contourQuarry, appInterface, portal, copperCircuit, deepWell, skyWindow,
+  ribbonWeave];
+
+const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
+  clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
+  skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit];
+
+export const OTHERS = ALL.filter(scene => !FAVOURITES.includes(scene)).sort((a, b) => a.name.localeCompare(b.name));
+
+// Picker, gallery, and next/previous order.
+export const SCENES = [...FAVOURITES, ...OTHERS];

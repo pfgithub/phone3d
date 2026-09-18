@@ -12,7 +12,7 @@ Parallax is a motion-tracked 3D "window" for phones, built with Three.js and Vit
 ```
 src/main.js           App: renderer, camera, sensors, UI, scene picker and gallery
 src/projection.js     Off-axis window projection math
-src/scenes/list.js    Scene list: imports + ordered SCENES array (the only file to edit when adding a scene)
+src/scenes/list.js    Scene list: imports, FAVOURITES, and ALL (SCENES = favourites, then the rest A–Z) (the only file to edit when adding a scene)
 src/scenes/index.js   Builds a scene by id (no need to touch)
 src/scenes/kit.js     Helpers passed to every scene's build()
 src/scenes/<id>.js    One file per scene
@@ -50,10 +50,10 @@ export default {
 ```js
 import lanterns from './lanterns.js';
 // ...
-export const SCENES = [light, relief, /* ... */, orbit, lanterns];
+const ALL = [light, relief, /* ... */, copperCircuit, lanterns];
 ```
 
-The array order is the picker and gallery order (and what next/previous step through). The first entry is the default scene on load.
+Order in `ALL` doesn't matter. `SCENES` (the picker, gallery, and next/previous order) is `FAVOURITES` in the order given, then every other scene sorted alphabetically by `name`. The gallery shows the two groups as separate sections. The first favourite is the default scene on load. Only add a scene to `FAVOURITES` if the user asks.
 
 You don't need to change anything else. The picker, gallery (with a thumbnail rendered from `build` at a 3:4 preview size), description text, and aria labels come from `SCENES`. The Node tests and the browser test iterate over every registered scene. The browser test also requires that each scene renders differently from the one before it.
 
@@ -112,7 +112,7 @@ test('lanterns stay within 60 mm', () => {
 ### Checklist
 
 1. `src/scenes/<id>.js` exports `{ id, name, description, build }`.
-2. It is imported and added to `SCENES` in `src/scenes/list.js`.
+2. It is imported and added to `ALL` in `src/scenes/list.js`.
 3. `npm test` and `npm run test:browser` pass.
 4. Look at it with `npm run dev` in both portrait and landscape.
 5. Commit and push.
