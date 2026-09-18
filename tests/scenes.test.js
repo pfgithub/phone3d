@@ -72,3 +72,31 @@ for(const {id} of SCENES) for(const landscape of [false,true]) {
     for(const v of [bounds.min,bounds.max]) assert.ok([v.x,v.y,v.z].every(Number.isFinite),id);
   });
 }
+
+for (const [width, height] of [[.066, .146], [.146, .066], [.04, .20], [.20, .04]]) {
+  test(`impossible triangle joins align head-on and separate with eye movement, ${width} x ${height}`, () => {
+    const group = new Group(); buildScene('impossible', group, width, height);
+    const faces = group.children.filter(mesh => mesh.isMesh && mesh.geometry?.type === 'BufferGeometry'
+      && mesh.geometry.getAttribute('position').count === 4);
+    assert.equal(faces.length, 3);
+    const project = (face, vertex, eyeX) => {
+      const p = face.geometry.getAttribute('position');
+      const scale = .3048 / (.3048 - p.getZ(vertex));
+      return [(p.getX(vertex) - eyeX) * scale + eyeX, p.getY(vertex) * scale];
+    };
+    for (let i = 0; i < 3; i++) for (const edge of [0, 1]) {
+      const a = project(faces[i], 2 + edge, 0), b = project(faces[(i + 1) % 3], edge, 0);
+      assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-8, 'seams must meet from the default eye');
+      const c = project(faces[i], 2 + edge, .04), d = project(faces[(i + 1) % 3], edge, .04);
+      assert.ok(Math.hypot(c[0] - d[0], c[1] - d[1]) > .0003, 'moving the eye must reveal the disconnected beams');
+    }
+  });
+  for (const id of ['zipper', 'splash', 'pin-wave']) {
+    test(`${id} has geometry on both sides of the glass, ${width} x ${height}`, () => {
+      const group = new Group(); buildScene(id, group, width, height);
+      const bounds = new Box3().setFromObject(group);
+      assert.ok(bounds.min.z < -.02);
+      assert.ok(bounds.max.z > .003 && bounds.max.z < .06);
+    });
+  }
+}

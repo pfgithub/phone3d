@@ -16,6 +16,13 @@ import origami from './origami.js';
 import neonCity from './neon-city.js';
 import marbleRun from './marble-run.js';
 
+import zipper from './zipper.js';
+import impossible from './impossible.js';
+import splash from './splash.js';
+import pinWave from './pin-wave.js';
+import moire from './moire.js';
+import nautilus from './nautilus.js';
+
 // Picker order. The first scene is shown on load. See AGENTS.md to add one.
 export const SCENES = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface,
-  jellyfish, clockwork, library, origami, neonCity, marbleRun];
+  jellyfish, clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus];
