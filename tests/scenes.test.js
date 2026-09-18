@@ -40,6 +40,21 @@ for(const landscape of [false,true]) {
   });
 }
 
+for(const [width,height] of [[.066,.146],[.146,.066],[.04,.20],[.20,.04]]) {
+  test(`app interface stays at the glass with shallow controls, ${width} x ${height}`, () => {
+    const group=new Group();buildScene('app-interface',group,width,height);
+    const bounds=new Box3().setFromObject(group);
+    assert.ok(bounds.min.z>=-.003000001);
+    assert.ok(bounds.min.z<-.0029);
+    assert.ok(bounds.max.z>.0028 && bounds.max.z<=.003);
+    const surface=group.getObjectByName('app-glass-surface');
+    assert.equal(surface.position.z,0);
+    assert.equal(surface.geometry.parameters.shapes.holes.length,2);
+    assert.ok(bounds.min.x>=-width/2-1e-8 && bounds.max.x<=width/2+1e-8);
+    assert.ok(bounds.min.y>=-height/2-1e-8 && bounds.max.y<=height/2+1e-8);
+  });
+}
+
 // Runs automatically for every scene registered in src/scenes/list.js.
 test('scene ids are unique and every scene has a name and description', () => {
   assert.equal(new Set(SCENES.map(s=>s.id)).size,SCENES.length);
