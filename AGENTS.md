@@ -7,6 +7,8 @@ Parallax is a motion-tracked 3D "window" for phones, built with Three.js and Vit
 - **Commit and push after every change.** When a change is complete and tests pass, `git add` the files, `git commit` with a clear message, and `git push`. Don't leave work uncommitted or unpushed. Pushing to `master` deploys to GitHub Pages (`.github/workflows/pages.yml`).
 - Run `npm test` before committing. For scene or UI changes, also run `npm run test:browser` (run `npx playwright install chromium` once first).
 
+- When you add a scene, don't add tests for it and ton't test it visually.
+
 ## Layout
 
 ```
@@ -16,7 +18,7 @@ src/scenes/list.js    Scene list: imports, FAVOURITES, and ALL (SCENES = favouri
 src/scenes/index.js   Builds a scene by id (no need to touch)
 src/scenes/kit.js     Helpers passed to every scene's build()
 src/scenes/<id>.js    One file per scene
-tests/scenes.test.js  Node tests (geometry bounds; every scene is checked automatically)
+tests/scenes.test.js  Node tests
 tests/browser/        Playwright tests (every scene is rendered via next/previous)
 ```
 
@@ -61,7 +63,7 @@ You don't need to change anything else. The picker, gallery (with a thumbnail re
 
 - **Units are meters.** 1 mm = `.001`. Scenes are life-size: a 6.3" 20:9 phone is about 65.7 × 145.9 mm (`w ≈ .0657`, `h ≈ .1459` in portrait).
 - The screen is the rectangle `x ∈ [-w/2, w/2]`, `y ∈ [-h/2, h/2]` on the plane **z = 0** (the glass).
-- **Negative z is inside the phone**, and **positive z comes out toward the viewer**. Keep most content between about `-.25` and `0`. Objects in front of the glass (z > 0) work but are clipped at the screen edges, so keep them small and centered (see `crystal.js`).
+- **Negative z is inside the phone**, and **positive z comes out toward the viewer**. Objects in front of the glass (z > 0) work but are clipped at the screen edges, so keep them small and centered (see `crystal.js`).
 - `w` and `h` change with orientation (landscape swaps them) and with the diagonal setting. Always position things relative to `w`, `h`, or `size` (`min(w, h)`), never with fixed x/y values, so the scene fits in both orientations.
 - Outside fullscreen the preview uses `h = .146` and a `w` that matches the preview's aspect ratio, so layouts must handle unusual aspect ratios.
 
@@ -110,19 +112,6 @@ return {
 ```
 
 `p` is `{ ray, x, y }`: a `THREE.Raycaster` from the eye through the pointer, and where that ray meets the glass (z = 0). Animate by changing transforms or material colors in `update`. Don't create geometry every frame. State that should survive a rebuild (such as a toggle or slider value) can live in plain module-level variables. See `app-interface.js`.
-
-### Depth tests (optional but encouraged)
-
-If the scene makes a physical claim, such as "only 7.5 mm deep", add a bounds test to `tests/scenes.test.js`:
-
-```js
-test('lanterns stay within 60 mm', () => {
-  const {width,height}=screenDimensions(6.3,false);
-  const group=new Group();buildScene('lanterns',group,width,height);
-  const bounds=new Box3().setFromObject(group);
-  assert.ok(bounds.min.z>=-.06);
-});
-```
 
 ### Checklist
 
