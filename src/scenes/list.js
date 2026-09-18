@@ -16,6 +16,7 @@ import origami from './origami.js';
 import neonCity from './neon-city.js';
 import marbleRun from './marble-run.js';
 import marbleMaze from './marble-maze.js';
+import marbleMazeRaised from './marble-maze-raised.js';
 
 import zipper from './zipper.js';
 import impossible from './impossible.js';
@@ -52,10 +53,10 @@ import krakenBreakout from './kraken-breakout.js';
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
 export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave];
 
-const INTERACTIVE_SCENES = [appInterface, marbleMaze, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse];
+const INTERACTIVE_SCENES = [appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse];
 
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
-  clockwork, library, origami, neonCity, marbleRun, marbleMaze, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
+  clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
   skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights,
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout];
