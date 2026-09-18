@@ -7,6 +7,7 @@ import crystal from './crystal.js';
 import tunnel from './tunnel.js';
 import garden from './garden.js';
 import orbit from './orbit.js';
+import phoneUi from './phone-ui.js';
 
 // Picker order. The first scene is shown on load. See AGENTS.md to add one.
-export const SCENES = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit];
+export const SCENES = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi];
