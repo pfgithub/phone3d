@@ -30,7 +30,7 @@ Deploy `dist/` to an HTTPS static host. There is no server-side component.
 4. Keep your head fixed and rotate the phone around the center of its display. Avoid translating it.
 5. Hide the controls for the clearest view. Try one eye for a stronger illusion.
 
-Choose **Marble maze** in the gallery to roll a marble through a wooden maze to the copper ring. Its physics uses accelerometer gravity independently of view calibration, including in touch and face tracking modes. A flat phone is level; every tilt contributes, with no dead zone. Allow motion access when prompted. Without motion samples the marble stays still; touch only changes the view.
+Choose **Marble maze** in the gallery to roll a marble through a randomly generated wooden maze to the copper ring, avoiding the pits; reaching the ring deals a new maze and falling in a pit returns the marble to the start. Its physics uses accelerometer gravity independently of view calibration, including in touch and face tracking modes. A flat phone is level; every tilt contributes, with no dead zone. Allow motion access when prompted. Without motion samples the marble stays still; touch only changes the view.
 
 ### Face tracking mode
 

@@ -1,7 +1,7 @@
 import { createKit } from './kit.js';
-import { SCENES, FAVOURITES } from './list.js';
+import { SCENES, SECTIONS } from './list.js';
 
-export { SCENES, FAVOURITES };
+export { SCENES, SECTIONS };
 
 export function buildScene(id, room, w, h) {
   const scene = SCENES.find(item => item.id === id);

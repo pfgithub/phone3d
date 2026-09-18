@@ -48,10 +48,11 @@ import popUpBook from './pop-up-book.js';
 import holographicFoilCard from './holographic-foil-card.js';
 import krakenBreakout from './kraken-breakout.js';
 
-// Favourites come first, in this order; the first is shown on load. Everything else follows
-// alphabetically by name. See AGENTS.md to add a scene.
-export const FAVOURITES = [crystal, jellyfish, contourQuarry, appInterface, portal, copperCircuit, deepWell, skyWindow,
-  ribbonWeave];
+// Favourites come first, in this order; the first is shown on load. Then interactive scenes (touch or
+// tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
+export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave];
+
+const INTERACTIVE_SCENES = [appInterface, marbleMaze, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse];
 
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
@@ -59,7 +60,16 @@ const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, or
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout];
 
-export const OTHERS = ALL.filter(scene => !FAVOURITES.includes(scene)).sort((a, b) => a.name.localeCompare(b.name));
+const byName = (a, b) => a.name.localeCompare(b.name);
+export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
+export const OTHERS = ALL.filter(scene => !FAVOURITES.includes(scene) && !INTERACTIVE.includes(scene)).sort(byName);
+
+// Gallery sections, in order.
+export const SECTIONS = [
+  { title: 'Favourites', scenes: FAVOURITES },
+  { title: 'Interactive', scenes: INTERACTIVE },
+  { title: 'Everything else', scenes: OTHERS },
+];
 
 // Picker, gallery, and next/previous order.
-export const SCENES = [...FAVOURITES, ...OTHERS];
+export const SCENES = SECTIONS.flatMap(section => section.scenes);

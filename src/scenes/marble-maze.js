@@ -1,8 +1,11 @@
+// Survives rebuilds (resize, orientation), so the current level is redrawn rather than reshuffled.
+let levelSeed = Math.floor(Math.random() * 4294967296);
+
 export default {
   id: 'marble-maze',
   name: 'Marble maze',
-  description: 'Tilt to roll the marble through a wooden maze to the copper ring. Flat is level, regardless of calibration. Requires motion sensors, in any tracking mode.',
-  build({ THREE, w, h, size, material, glow, add, box, sphere, ring, lines }) {
+  description: 'Tilt to roll the marble through a random wooden maze to the copper ring without dropping it into a pit; each finish deals a new maze. Flat is level, regardless of calibration. Requires motion sensors, in any tracking mode.',
+  build({ THREE, room, w, h, size, material, glow, add, box, sphere, ring, lines }) {
     const boardW = w * .88, boardH = h * .86;
     const cols = Math.min(13, Math.max(5, Math.round(w / size * 5)));
     const rows = Math.min(13, Math.max(5, Math.round(h / size * 5)));
@@ -14,73 +17,153 @@ export default {
     const rail = material('#d7b47b', .22, .38);
     const edging = material('#594132', .2, .55);
     const brass = material('#d9b86e', .7, .3);
-    box(0, 0, floorZ - size * .025, boardW + size * .06, boardH + size * .06, size * .05, edging);
-    box(0, 0, floorZ - size * .008, boardW, boardH, size * .016, wood);
+    const pitRadius = cell * .34, pitDepth = radius * 4.5, floorThickness = size * .016;
+    const baseZ = floorZ - pitDepth - size * .012, lip = size * .03;
+    // The board is a frame around a perforated floor, so pits are real openings you can see into.
+    box(0, 0, baseZ, boardW + lip * 2, boardH + lip * 2, size * .024, edging);
+    const skirtDepth = floorZ - baseZ, skirtZ = (floorZ + baseZ) / 2;
+    box(0, bottom - lip / 2, skirtZ, boardW + lip * 2, lip, skirtDepth, edging);
+    box(0, -bottom + lip / 2, skirtZ, boardW + lip * 2, lip, skirtDepth, edging);
+    box(left - lip / 2, 0, skirtZ, lip, boardH, skirtDepth, edging);
+    box(-left + lip / 2, 0, skirtZ, lip, boardH, skirtDepth, edging);
 
-    // Subtle grain is geometry, so the board remains crisp at phone scale.
-    const grain = [];
-    for (let i = 1; i < 60; i++) {
-      const x = left + boardW * i / 60;
-      for (let j = 0; j < 8; j++) {
-        const y = bottom + boardH * j / 8;
-        const bend = Math.sin(i * 2.7 + j * .8) * cell * .025;
-        const nextBend = Math.sin(i * 2.7 + (j + 1) * .8) * cell * .025;
-        grain.push([x + bend, y, floorZ + .00001], [x + nextBend, y + boardH / 8, floorZ + .00001]);
+    const startX = left + cw / 2, startY = bottom + ch / 2;
+    const goalX = -left - cw / 2, goalY = -bottom - ch / 2;
+    const cellX = index => left + (index % cols + .5) * cw, cellY = index => bottom + (Math.floor(index / cols) + .5) * ch;
+    let walls = [], pits = [], levelObjects = [], goalMaterial;
+    const shared = new Set([wood, rail, edging, brass]);
+
+    function clearLevel() {
+      const owned = new Set();
+      for (const object of levelObjects) {
+        room.remove(object);
+        object.traverse(child => {
+          child.geometry?.dispose();
+          if (child.userData.ownMaterial && !shared.has(child.material)) owned.add(child.material);
+        });
       }
-    }
-    lines(grain, '#704825', .22);
-
-    // Seeded depth-first carving gives a connected maze with exactly one route
-    // between each pair of cells, reproduced identically on every rebuild.
-    let seed = 7319;
-    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-    const cells = Array.from({ length: rows * cols }, () => ({ top: true, right: true, visited: false }));
-    const stack = [0];
-    cells[0].visited = true;
-    while (stack.length) {
-      const index = stack.at(-1), x = index % cols, y = Math.floor(index / cols);
-      const neighbors = [];
-      if (x > 0 && !cells[index - 1].visited) neighbors.push(index - 1);
-      if (x < cols - 1 && !cells[index + 1].visited) neighbors.push(index + 1);
-      if (y > 0 && !cells[index - cols].visited) neighbors.push(index - cols);
-      if (y < rows - 1 && !cells[index + cols].visited) neighbors.push(index + cols);
-      if (!neighbors.length) { stack.pop(); continue; }
-      const next = neighbors[Math.floor(random() * neighbors.length)];
-      if (next === index + 1) cells[index].right = false;
-      else if (next === index - 1) cells[next].right = false;
-      else if (next === index + cols) cells[index].top = false;
-      else cells[next].top = false;
-      cells[next].visited = true;
-      stack.push(next);
+      owned.forEach(item => item.dispose());
+      levelObjects = [];
     }
 
-    const walls = [];
-    function wall(x, y, width, height, outer = false) {
-      walls.push({ minX: x - width / 2, maxX: x + width / 2, minY: y - height / 2, maxY: y + height / 2 });
-      box(x, y, floorZ + wallHeight / 2, width, height, wallHeight, outer ? edging : rail);
-      box(x, y, floorZ + wallHeight + thickness * .08, width * .8, height * .8, thickness * .16, brass);
+    function buildLevel() {
+      const before = new Set(room.children);
+      // Seeded depth-first carving gives a connected maze; the seed lives at module level so
+      // rebuilding on resize redraws the same level, and each completed level picks a new one.
+      let seed = levelSeed;
+      const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+      const cells = Array.from({ length: rows * cols }, () => ({ top: true, right: true, visited: false }));
+      const stack = [0];
+      cells[0].visited = true;
+      while (stack.length) {
+        const index = stack.at(-1), x = index % cols, y = Math.floor(index / cols);
+        const neighbors = [];
+        if (x > 0 && !cells[index - 1].visited) neighbors.push(index - 1);
+        if (x < cols - 1 && !cells[index + 1].visited) neighbors.push(index + 1);
+        if (y > 0 && !cells[index - cols].visited) neighbors.push(index - cols);
+        if (y < rows - 1 && !cells[index + cols].visited) neighbors.push(index + cols);
+        if (!neighbors.length) { stack.pop(); continue; }
+        const next = neighbors[Math.floor(random() * neighbors.length)];
+        if (next === index + 1) cells[index].right = false;
+        else if (next === index - 1) cells[next].right = false;
+        else if (next === index + cols) cells[index].top = false;
+        else cells[next].top = false;
+        cells[next].visited = true;
+        stack.push(next);
+      }
+      // Knock out some walls to make loops, so pits can sit on the obvious route and be bypassed.
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const c = cells[y * cols + x];
+        if (x < cols - 1 && c.right && random() < .14) c.right = false;
+        if (y < rows - 1 && c.top && random() < .14) c.top = false;
+      }
+      const open = index => {
+        const x = index % cols, y = Math.floor(index / cols), result = [];
+        if (x > 0 && !cells[index - 1].right) result.push(index - 1);
+        if (x < cols - 1 && !cells[index].right) result.push(index + 1);
+        if (y > 0 && !cells[index - cols].top) result.push(index - cols);
+        if (y < rows - 1 && !cells[index].top) result.push(index + cols);
+        return result;
+      };
+      const goal = rows * cols - 1, pitCells = new Set();
+      const solvable = () => {
+        const seen = new Set([0]), queue = [0];
+        while (queue.length) for (const next of open(queue.shift())) {
+          if (next === goal) return true;
+          if (!seen.has(next) && !pitCells.has(next)) { seen.add(next); queue.push(next); }
+        }
+        return false;
+      };
+      const safe = new Set([0, 1, cols, cols + 1, goal]);
+      const target = Math.round(rows * cols * .12);
+      for (let attempt = 0; attempt < rows * cols * 3 && pitCells.size < target; attempt++) {
+        const index = Math.floor(random() * rows * cols);
+        if (safe.has(index) || pitCells.has(index)) continue;
+        pitCells.add(index);
+        if (!solvable()) pitCells.delete(index);
+      }
+      pits = [...pitCells].map(index => ({ x: cellX(index), y: cellY(index) }));
+
+      const floor = new THREE.Shape();
+      floor.moveTo(left, bottom); floor.lineTo(-left, bottom); floor.lineTo(-left, -bottom); floor.lineTo(left, -bottom);
+      floor.closePath();
+      const hole = material('#20150e', 0, .95);
+      hole.side = THREE.DoubleSide;
+      for (const pit of pits) {
+        floor.holes.push(new THREE.Path().absarc(pit.x, pit.y, pitRadius, 0, Math.PI * 2, true));
+        const shaft = add(new THREE.CylinderGeometry(pitRadius, pitRadius, pitDepth, 32, 1, true), hole,
+          pit.x, pit.y, floorZ - pitDepth / 2);
+        shaft.rotation.x = Math.PI / 2;
+        add(new THREE.CircleGeometry(pitRadius, 32), hole, pit.x, pit.y, floorZ - pitDepth);
+        ring(pit.x, pit.y, floorZ, pitRadius, radius * .06, brass);
+      }
+      add(new THREE.ExtrudeGeometry(floor, { depth: floorThickness, bevelEnabled: false, curveSegments: 24 }), wood,
+        0, 0, floorZ - floorThickness);
+
+      // Subtle grain is geometry, so the board remains crisp at phone scale.
+      const grain = [];
+      for (let i = 1; i < 60; i++) {
+        const x = left + boardW * i / 60;
+        for (let j = 0; j < 24; j++) {
+          const y = bottom + boardH * j / 24;
+          const bend = Math.sin(i * 2.7 + j * .27) * cell * .025;
+          const nextBend = Math.sin(i * 2.7 + (j + 1) * .27) * cell * .025;
+          const midY = y + boardH / 48;
+          if (pits.some(pit => Math.hypot(x - pit.x, midY - pit.y) < pitRadius + boardH / 40)) continue;
+          grain.push([x + bend, y, floorZ + .00001], [x + nextBend, y + boardH / 24, floorZ + .00001]);
+        }
+      }
+      lines(grain, '#704825', .22);
+
+      walls = [];
+      function wall(x, y, width, height, outer = false) {
+        walls.push({ minX: x - width / 2, maxX: x + width / 2, minY: y - height / 2, maxY: y + height / 2 });
+        box(x, y, floorZ + wallHeight / 2, width, height, wallHeight, outer ? edging : rail);
+        box(x, y, floorZ + wallHeight + thickness * .08, width * .8, height * .8, thickness * .16, brass);
+      }
+      wall(left, 0, thickness, boardH + thickness, true);
+      wall(-left, 0, thickness, boardH + thickness, true);
+      wall(0, bottom, boardW + thickness, thickness, true);
+      wall(0, -bottom, boardW + thickness, thickness, true);
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const cellWalls = cells[y * cols + x];
+        if (x < cols - 1 && cellWalls.right) wall(left + (x + 1) * cw, bottom + (y + .5) * ch, thickness, ch + thickness);
+        if (y < rows - 1 && cellWalls.top) wall(left + (x + .5) * cw, bottom + (y + 1) * ch, cw + thickness, thickness);
+      }
+      ring(startX, startY, floorZ + radius * .035, radius * 1.35, radius * .055, material('#648b7c'));
+      goalMaterial = glow('#d87845');
+      ring(goalX, goalY, floorZ + radius * .05, radius * 1.45, radius * .11, goalMaterial);
+      ring(goalX, goalY, floorZ + radius * .05, radius * .8, radius * .055, goalMaterial);
+      levelObjects = room.children.filter(child => !before.has(child));
     }
-    wall(left, 0, thickness, boardH + thickness, true);
-    wall(-left, 0, thickness, boardH + thickness, true);
-    wall(0, bottom, boardW + thickness, thickness, true);
-    wall(0, -bottom, boardW + thickness, thickness, true);
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const cellWalls = cells[y * cols + x];
-      if (x < cols - 1 && cellWalls.right) wall(left + (x + 1) * cw, bottom + (y + .5) * ch, thickness, ch + thickness);
-      if (y < rows - 1 && cellWalls.top) wall(left + (x + .5) * cw, bottom + (y + 1) * ch, cw + thickness, thickness);
-    }
+    buildLevel();
+
     for (const x of [-1, 1]) for (const y of [-1, 1]) {
       const sx = x * (boardW / 2 + size * .017), sy = y * (boardH / 2 + size * .017);
       const screw = add(new THREE.CylinderGeometry(size * .008, size * .008, size * .004, 12), brass, sx, sy, floorZ);
       screw.rotation.x = Math.PI / 2;
       box(sx, sy, floorZ + size * .0021, size * .011, size * .0018, size * .0004, edging);
     }
-    const startX = left + cw / 2, startY = bottom + ch / 2;
-    const goalX = -left - cw / 2, goalY = -bottom - ch / 2;
-    ring(startX, startY, floorZ + radius * .035, radius * 1.35, radius * .055, material('#648b7c'));
-    const goalMaterial = glow('#d87845');
-    ring(goalX, goalY, floorZ + radius * .05, radius * 1.45, radius * .11, goalMaterial);
-    ring(goalX, goalY, floorZ + radius * .05, radius * .8, radius * .055, goalMaterial);
     const marble = sphere(startX, startY, floorZ + radius, radius,
       new THREE.MeshPhysicalMaterial({ color: '#a5eadc', metalness: .3, roughness: .16, clearcoat: 1 }));
     // Inlaid bands make the actual rolling rotation visible without a texture.
@@ -94,7 +177,7 @@ export default {
     const shadow = add(new THREE.CircleGeometry(radius * 1.12, 32), shadowMaterial, startX, startY, floorZ + radius * .025);
 
     let x = startX, y = startY, vx = 0, vy = 0, accumulator = 0;
-    let gx = 0, gy = 0, hasGravity = false, finished = false;
+    let gx = 0, gy = 0, hasGravity = false, finished = false, falling = null, finishTime = 0;
     const step = 1 / 240, rotationAxis = new THREE.Vector3();
     function collide() {
       // Circle-versus-box contact preserves tangential velocity at walls and
@@ -123,15 +206,42 @@ export default {
         }
       }
     }
+    function reset() {
+      x = startX; y = startY; vx = vy = accumulator = 0;
+      falling = null; finished = false; finishTime = 0;
+      marble.position.set(x, y, floorZ + radius);
+      shadow.position.set(x, y, shadow.position.z);
+      shadow.visible = true;
+    }
     return {
       update(dt, time, gravity) {
+        const elapsed = Math.max(0, Math.min(dt, .05));
+        if (falling) {
+          // Drop into the pit, then put the marble back at the start of the same level.
+          falling.time += elapsed;
+          const t = Math.min(1, falling.time / .35), settle = Math.min(1, falling.time / .2);
+          x = falling.x + (falling.pit.x - falling.x) * settle;
+          y = falling.y + (falling.pit.y - falling.y) * settle;
+          marble.position.set(x, y, floorZ + radius - t * t * (pitDepth - radius * .1));
+          if (falling.time > .9) reset();
+          return;
+        }
+        if (finished) {
+          finishTime += elapsed;
+          if (finishTime > .9) {
+            levelSeed = Math.floor(Math.random() * 4294967296);
+            clearLevel();
+            buildLevel();
+            reset();
+          }
+          return;
+        }
         // No synthetic gravity or pointer substitute when sensor samples stop.
         if (!gravity) {
           vx = vy = accumulator = 0;
           hasGravity = false;
           return;
         }
-        const elapsed = Math.max(0, Math.min(dt, .05));
         const smoothing = hasGravity ? 1 - Math.exp(-elapsed * 25) : 1;
         gx += (gravity.x - gx) * smoothing;
         gy += (gravity.y - gy) * smoothing;
@@ -161,10 +271,17 @@ export default {
               marble.rotateOnWorldAxis(rotationAxis, travel / radius);
             }
           }
+          // Once the marble's centre passes the rim it tips in.
+          const pit = pits.find(item => Math.hypot(x - item.x, y - item.y) < pitRadius - radius * .25);
+          if (pit) {
+            falling = { pit, x, y, time: 0 };
+            shadow.visible = false;
+            return;
+          }
         }
         marble.position.set(x, y, floorZ + radius);
         shadow.position.set(x, y, shadow.position.z);
-        if (!finished && Math.hypot(x - goalX, y - goalY) < radius * .9) {
+        if (Math.hypot(x - goalX, y - goalY) < radius * .9) {
           finished = true;
           goalMaterial.color.set('#81f5c3');
         }

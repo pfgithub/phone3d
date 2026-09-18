@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { screenDimensions, orientationQuaternion, eyeFromOrientation, applyWindowProjection } from './projection.js';
 import './style.css';
-import { SCENES, FAVOURITES, buildScene } from './scenes/index.js';
+import { SCENES, SECTIONS, buildScene } from './scenes/index.js';
 import { PIXEL_9A, eyeFromIrises, OneEuroVector, createFaceTracker } from './facetrack.js';
 
 const $ = (id) => document.getElementById(id);
@@ -298,11 +298,16 @@ function init() {
   host.addEventListener('pointercancel',()=>{if(pointer?.scene)live?.pointerUp?.(null);pointer=null;});
 
   // Scene gallery and previous/next navigation.
+  const sectionStarts = new Map();
+  SECTIONS.reduce((start, section) => {
+    if (section.scenes.length) sectionStarts.set(start, section.title);
+    return start + section.scenes.length;
+  }, 0);
   const cards = SCENES.map((item, i) => {
-    if (i === 0 || i === FAVOURITES.length) {
+    if (sectionStarts.has(i)) {
       const heading = document.createElement('h3');
       heading.className = 'gallery-section';
-      heading.textContent = i === 0 ? 'Favourites' : 'Everything else';
+      heading.textContent = sectionStarts.get(i);
       $('gallery-grid').appendChild(heading);
     }
     const card = document.createElement('button');

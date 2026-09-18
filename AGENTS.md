@@ -14,7 +14,7 @@ Parallax is a motion-tracked 3D "window" for phones, built with Three.js and Vit
 ```
 src/main.js           App: renderer, camera, sensors, UI, scene picker and gallery
 src/projection.js     Off-axis window projection math
-src/scenes/list.js    Scene list: imports, FAVOURITES, and ALL (SCENES = favourites, then the rest A–Z) (the only file to edit when adding a scene)
+src/scenes/list.js    Scene list: imports, FAVOURITES, INTERACTIVE_SCENES, and ALL (SCENES = favourites, interactive A–Z, then the rest A–Z) (the only file to edit when adding a scene)
 src/scenes/index.js   Builds a scene by id (no need to touch)
 src/scenes/kit.js     Helpers passed to every scene's build()
 src/scenes/<id>.js    One file per scene
@@ -55,7 +55,7 @@ import lanterns from './lanterns.js';
 const ALL = [light, relief, /* ... */, copperCircuit, lanterns];
 ```
 
-Order in `ALL` doesn't matter. `SCENES` (the picker, gallery, and next/previous order) is `FAVOURITES` in the order given, then every other scene sorted alphabetically by `name`. The gallery shows the two groups as separate sections. The first favourite is the default scene on load. Only add a scene to `FAVOURITES` if the user asks.
+Order in `ALL` doesn't matter. `SCENES` (the picker, gallery, and next/previous order) is `FAVOURITES` in the order given, then interactive scenes (listed in `INTERACTIVE_SCENES`: anything using touch or tilt), then every other scene, each sorted alphabetically by `name`. The gallery shows the three groups as separate sections. Add a scene to `INTERACTIVE_SCENES` if it returns `pointerDown` or uses `gravity`; an interactive scene is never also a favourite. The first favourite is the default scene on load. Only add a scene to `FAVOURITES` if the user asks.
 
 You don't need to change anything else. The picker, gallery (with a thumbnail rendered from `build` at a 3:4 preview size), description text, and aria labels come from `SCENES`. The Node tests and the browser test iterate over every registered scene. The browser test also requires that each scene renders differently from the one before it.
 
