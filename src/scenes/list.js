@@ -28,6 +28,9 @@ import tidePools from './tide-pools.js';
 import ribbonWeave from './ribbon-weave.js';
 import contourQuarry from './contour-quarry.js';
 import copperCircuit from './copper-circuit.js';
+import tactileRadio from './tactile-radio.js';
+import tactileFocus from './tactile-focus.js';
+import tactileLights from './tactile-lights.js';
 
 // Favourites come first, in this order; the first is shown on load. Everything else follows
 // alphabetically by name. See AGENTS.md to add a scene.
@@ -36,7 +39,7 @@ export const FAVOURITES = [crystal, jellyfish, contourQuarry, appInterface, port
 
 const ALL = [light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
-  skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit];
+  skyWindow, tidePools, ribbonWeave, contourQuarry, copperCircuit, tactileRadio, tactileFocus, tactileLights];
 
 export const OTHERS = ALL.filter(scene => !FAVOURITES.includes(scene)).sort((a, b) => a.name.localeCompare(b.name));
 
