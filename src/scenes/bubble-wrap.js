@@ -20,8 +20,8 @@ export default {
     const sx = w * .85 / cols, sy = h * .85 / rows, radius = Math.min(sx, sy) * .41;
     function makeSheet() {
       const group = new THREE.Group(); room.add(group);
-      // Flat backing film at the glass, with a round opening under every bubble.
-      const plastic = material('#d5edf1', .25, .22); plastic.transparent = true; plastic.opacity = .42; plastic.depthWrite = false; plastic.side = THREE.DoubleSide;
+      // Opaque film at z = 0 occludes the chamber except through the bubble openings.
+      const plastic = material('#d5edf1', .25, .22); plastic.side = THREE.DoubleSide;
       const film = new THREE.Shape();
       film.moveTo(-w * .46, -h * .46); film.lineTo(w * .46, -h * .46); film.lineTo(w * .46, h * .46); film.lineTo(-w * .46, h * .46); film.closePath();
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
