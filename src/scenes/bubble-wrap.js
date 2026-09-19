@@ -1,7 +1,7 @@
 export default {
   id: 'bubble-wrap',
   name: 'Bubble wrap',
-  description: 'Tap or sweep across bubbles raised 3 mm above the glass. Pop the whole sheet and a fresh one slides in from behind.',
+  description: 'Tap or sweep across bubbles rising 3 mm out of a plastic sheet at the glass. Pop the whole sheet and a fresh one slides in from behind.',
   build({ THREE, w, h, size, room, material, glow, add, box, ring, lines, chamber }) {
     chamber(.035, '#426979');
     const rim = size * .027, edge = material('#acc8d0', .5, .32);
@@ -20,8 +20,16 @@ export default {
     const sx = w * .85 / cols, sy = h * .85 / rows, radius = Math.min(sx, sy) * .41;
     function makeSheet() {
       const group = new THREE.Group(); room.add(group);
-      const plastic = material('#d5edf1', .25, .22); plastic.transparent = true; plastic.opacity = .26; plastic.depthWrite = false; plastic.side = THREE.DoubleSide;
-      const base = add(new THREE.PlaneGeometry(w * .92, h * .92), plastic, 0, 0, -.00025); group.add(base);
+      // Flat backing film at the glass, with a round opening under every bubble.
+      const plastic = material('#d5edf1', .25, .22); plastic.transparent = true; plastic.opacity = .42; plastic.depthWrite = false; plastic.side = THREE.DoubleSide;
+      const film = new THREE.Shape();
+      film.moveTo(-w * .46, -h * .46); film.lineTo(w * .46, -h * .46); film.lineTo(w * .46, h * .46); film.lineTo(-w * .46, h * .46); film.closePath();
+      for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
+        const hole = new THREE.Path();
+        hole.absarc((col - (cols - 1) / 2) * sx, (row - (rows - 1) / 2) * sy, radius, 0, Math.PI * 2, true);
+        film.holes.push(hole);
+      }
+      const base = add(new THREE.ShapeGeometry(film, 10), plastic, 0, 0, 0); group.add(base);
       const bubbles = [];
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
         const x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
