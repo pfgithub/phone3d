@@ -1,5 +1,6 @@
 import lockPicking from './lock-picking.js';
 import bubbleWrap from './bubble-wrap.js';
+import bubbleWrapInverting from './bubble-wrap-inverting.js';
 import pegSolitaire from './peg-solitaire.js';
 import tilePull from './tile-pull.js';
 import clawMachine from './claw-machine.js';
@@ -77,7 +78,7 @@ import springJoystick from './spring-joystick.js';
 export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave, keyhole, aquarium];
 
 const INTERACTIVE_SCENES = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
-  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick];
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting];
 
 const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
@@ -85,7 +86,7 @@ const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whack
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout,
   ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen,
-  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick];
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
