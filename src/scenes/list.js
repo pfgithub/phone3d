@@ -72,13 +72,19 @@ import recessedMixer from './recessed-mixer.js';
 import rockerPanel from './rocker-panel.js';
 import shuttleDial from './shuttle-dial.js';
 import springJoystick from './spring-joystick.js';
+import antFarm from './ant-farm.js';
+import snowGlobe from './snow-globe.js';
+import chatThread from './chat-thread.js';
+import weatherCards from './weather-cards.js';
+import spiritLevel from './spirit-level.js';
 
 // Favourites come first, in this order; the first is shown on load. Then interactive scenes (touch or
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
 export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCircuit, deepWell, skyWindow, ribbonWeave, keyhole, aquarium];
 
 const INTERACTIVE_SCENES = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
-  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting];
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting,
+  snowGlobe, chatThread, weatherCards, spiritLevel];
 
 const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
@@ -86,7 +92,8 @@ const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whack
   chalkPebbles, pressedSage, porcelainRipples, pointCloudSculpture, louvredCard, hollowMask, anamorphicScatter,
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout,
   ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen,
-  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting];
+  thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting,
+  antFarm, snowGlobe, chatThread, weatherCards, spiritLevel];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
