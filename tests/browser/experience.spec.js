@@ -12,8 +12,18 @@ test('desktop renders, drag changes perspective, and settings and controls work'
   expect(Buffer.compare(before,await page.locator('canvas').screenshot({style:'#experience{visibility:hidden!important}'}))).not.toBe(0);
   await page.getByRole('button',{name:'Open display settings'}).click();
   await page.locator('#distance').fill('40');
+  await page.locator('#diagonal').fill('13.7');
   await page.getByRole('button',{name:'Apply settings'}).click();
   await expect(page.locator('#settings')).not.toBeVisible();
+  // Out-of-range values are accepted, stored, and undone by the reset button.
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('parallax.settings')).diagonal)).toBe(13.7);
+  await page.getByRole('button',{name:'Open display settings'}).click();
+  await expect(page.locator('#distance')).toHaveValue('40');
+  await page.getByRole('button',{name:'Reset to defaults'}).click();
+  await expect(page.locator('#settings')).not.toBeVisible();
+  await page.getByRole('button',{name:'Open display settings'}).click();
+  await expect(page.locator('#diagonal')).toHaveValue('6.3');
+  await page.getByRole('button',{name:'Close settings'}).click();
   await page.getByRole('button',{name:'Hide controls',exact:true}).click();
   await expect(page.locator('#calibrate')).not.toBeVisible();
   await page.getByRole('button',{name:'Show controls'}).click();
@@ -70,7 +80,7 @@ test('denied sensor permission gives a manual fallback', async ({page}) => {
   await expect(page.locator('#live-message')).toContainText('Motion access was denied');
 });
 
-test('default distance applies, two decimals work, and invalid edits can be dismissed', async ({page}) => {
+test('default distance applies, two decimals work, and out-of-range edits are allowed', async ({page}) => {
   await page.goto('/');
   await page.getByRole('button',{name:'Explore with touch'}).click();
   const open = () => page.getByRole('button',{name:'Open display settings'}).click();
@@ -85,11 +95,20 @@ test('default distance applies, two decimals work, and invalid edits can be dism
   await open();
   await page.locator('#distance').fill('2');
   await page.getByRole('button',{name:'Apply settings'}).click();
-  await expect(page.locator('#settings')).toBeVisible();
+  await expect(page.locator('#settings')).not.toBeVisible();
+  await open();
+  await expect(page.locator('#distance')).toHaveValue('2');
+  // Closing without applying discards the edit.
+  await page.locator('#distance').fill('900');
   await page.getByRole('button',{name:'Close settings'}).click();
   await expect(page.locator('#settings')).not.toBeVisible();
   await open();
-  await expect(page.locator('#distance')).toHaveValue('35.67');
+  await expect(page.locator('#distance')).toHaveValue('2');
+  // A blank field keeps the value it had.
+  await page.locator('#distance').fill('');
+  await page.getByRole('button',{name:'Apply settings'}).click();
+  await open();
+  await expect(page.locator('#distance')).toHaveValue('2');
 });
 
 test('every scene renders and next/previous, gallery, hiding controls and resize work', async ({page}) => {

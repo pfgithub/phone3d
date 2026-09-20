@@ -7,7 +7,30 @@ import { PIXEL_9A, eyeFromIrises, OneEuroVector, createFaceTracker } from './fac
 const $ = (id) => document.getElementById(id);
 const MOTION_GUIDE = 'Hold the phone straight on, 1 foot from your eyes.<br><strong>Tap calibrate, then gently tilt around its center.</strong>';
 const host = $('viewport');
-const state = { scene: SCENES[0].id, immersive: false, mode: 'preview', diagonal: 6.3, distance: .3048, current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0, ...PIXEL_9A, face: null, lastFace: 0, faceEye: null };
+// Everything the settings dialog can change, and what "Reset to defaults" restores.
+const DEFAULT_SETTINGS = { diagonal: 6.3, distance: .3048, ...PIXEL_9A };
+const SETTINGS_KEY = 'parallax.settings';
+const state = { scene: SCENES[0].id, immersive: false, mode: 'preview', current: null, baseline: null, lastSensor: 0, controls: true, manualX: 0, manualY: 0, ...DEFAULT_SETTINGS, ...loadSettings(), face: null, lastFace: 0, faceEye: null };
+
+// Stored settings are trusted only to be the right shape: any finite number is allowed.
+function loadSettings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
+    const settings = {};
+    for (const [key, fallback] of Object.entries(DEFAULT_SETTINGS)) {
+      const value = stored?.[key];
+      if (typeof fallback === 'number' ? Number.isFinite(value) : typeof value === 'string') settings[key] = value;
+    }
+    return settings;
+  } catch {
+    return {};
+  }
+}
+function saveSettings() {
+  const settings = {};
+  for (const key of Object.keys(DEFAULT_SETTINGS)) settings[key] = state[key];
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+}
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -246,17 +269,27 @@ function init() {
   $('hide-controls').addEventListener('click',()=>setControls(false));
   $('restore-controls').addEventListener('click',()=>setControls(true));
   const mm = v => Number((v * 1000).toFixed(1));
-  $('settings-open').addEventListener('click',()=>{ $('diagonal').value=state.diagonal; $('distance').value=Number((state.distance*100).toFixed(2));
-    $('tracking-mode').value=state.mode==='face'?'face':'motion'; $('eye').value=state.eye; $('ipd').value=mm(state.ipd); $('camera-fov').value=state.cameraFov; $('camera-top').value=mm(state.cameraFromTop); $('settings').returnValue=''; $('settings').showModal(); });
+  // Fields accept any number; an unparseable one keeps the value it had.
+  const num = (id, fallback, scale = 1) => { const raw = $(id).value.trim(); const v = raw === '' ? NaN : Number(raw); return Number.isFinite(v) ? v * scale : fallback; };
+  const fillSettings = () => { $('diagonal').value=state.diagonal; $('distance').value=Number((state.distance*100).toFixed(2));
+    $('eye').value=state.eye; $('ipd').value=mm(state.ipd); $('camera-fov').value=state.cameraFov; $('camera-top').value=mm(state.cameraFromTop); };
+  $('settings-open').addEventListener('click',()=>{ fillSettings();
+    $('tracking-mode').value=state.mode==='face'?'face':'motion'; $('settings').returnValue=''; $('settings').showModal(); });
   $('settings').addEventListener('close',()=>{
-    if($('settings').returnValue==='apply') {
-      state.diagonal=Number($('diagonal').value);state.distance=Number($('distance').value)/100;
-      state.eye=$('eye').value;state.ipd=Number($('ipd').value)/1000;state.cameraFov=Number($('camera-fov').value);state.cameraFromTop=Number($('camera-top').value)/1000;
+    const reset=$('settings').returnValue==='reset';
+    if(reset || $('settings').returnValue==='apply') {
+      if(reset) { Object.assign(state,DEFAULT_SETTINGS); try { localStorage.removeItem(SETTINGS_KEY); } catch {} }
+      else {
+        state.diagonal=num('diagonal',state.diagonal);state.distance=num('distance',state.distance,.01);
+        state.eye=$('eye').value;state.ipd=num('ipd',state.ipd,.001);state.cameraFov=num('camera-fov',state.cameraFov);state.cameraFromTop=num('camera-top',state.cameraFromTop,.001);
+        saveSettings();
+      }
       faceFilter.reset();resize();
-      const wantFace=$('tracking-mode').value==='face';
+      const wantFace=reset ? state.mode==='face' : $('tracking-mode').value==='face';
       if(wantFace && state.mode!=='face') startFace();
       else if(!wantFace && state.mode==='face') { stopFace(); state.mode='sensor'; state.baseline=null; $('guidance').innerHTML=MOTION_GUIDE; }
       calibrate();
+      if(reset) message('Settings reset to defaults.',3000);
     }
   });
   $('about-open').addEventListener('click',()=>$('about').showModal());
