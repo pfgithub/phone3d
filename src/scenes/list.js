@@ -77,6 +77,9 @@ import snowGlobe from './snow-globe.js';
 import chatThread from './chat-thread.js';
 import weatherCards from './weather-cards.js';
 import spiritLevel from './spirit-level.js';
+import controlCenter from './control-center.js';
+import pocketCalculator from './pocket-calculator.js';
+import dayPlanner from './day-planner.js';
 
 // Favourites come first, in this order; the first is shown on load. Then interactive scenes (touch or
 // tilt), then everything else, each alphabetically by name. See AGENTS.md to add a scene.
@@ -84,7 +87,7 @@ export const FAVOURITES = [crystal, jellyfish, contourQuarry, portal, copperCirc
 
 const INTERACTIVE_SCENES = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, appInterface, marbleMaze, marbleMazeRaised, tactileRadio, tactileFocus, tactileLights, hideAndSeekDollhouse,
   thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting,
-  snowGlobe, chatThread, weatherCards, spiritLevel];
+  snowGlobe, chatThread, weatherCards, spiritLevel, controlCenter, pocketCalculator, dayPlanner];
 
 const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whackAMole, waterLevel, waterLevelThin, sandTimerTray, pinballPocket, light, relief, portal, terrain, pocket, crystal, tunnel, garden, orbit, phoneUi, appInterface, jellyfish,
   clockwork, library, origami, neonCity, marbleRun, marbleMaze, marbleMazeRaised, zipper, impossible, splash, pinWave, moire, nautilus, deepWell,
@@ -93,7 +96,7 @@ const ALL = [lockPicking, bubbleWrap, pegSolitaire, tilePull, clawMachine, whack
   keyhole, hideAndSeekDollhouse, shadowBox, rainWindow, aquarium, popUpBook, holographicFoilCard, krakenBreakout,
   ivorySockets, terracottaNiches, milledChannels, leatherInlay, jadeLeaves, paperRelief, lockScreen,
   thumbwheelBank, trackballConsole, recessedMixer, rockerPanel, shuttleDial, springJoystick, bubbleWrapInverting,
-  antFarm, snowGlobe, chatThread, weatherCards, spiritLevel];
+  antFarm, snowGlobe, chatThread, weatherCards, spiritLevel, controlCenter, pocketCalculator, dayPlanner];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 export const INTERACTIVE = INTERACTIVE_SCENES.filter(scene => !FAVOURITES.includes(scene)).sort(byName);
