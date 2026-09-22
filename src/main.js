@@ -438,3 +438,9 @@ function init() {
   }
   requestAnimationFrame(frame);
 }
+
+// Installable app: the service worker caches the app for offline use. Skipped in
+// dev so Vite's hot reload never serves stale files.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}

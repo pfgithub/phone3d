@@ -30,6 +30,8 @@ Deploy `dist/` to an HTTPS static host. There is no server-side component.
 4. Keep your head fixed and rotate the phone around the center of its display. Avoid translating it.
 5. Hide the controls for the clearest view. Try one eye for a stronger illusion.
 
+**Install as an app.** Parallax is a progressive web app. In Chrome on Android, open the site and choose **⋮ → Add to Home screen → Install** (Chrome may also offer an install banner). The installed app launches fullscreen from its own icon and works offline after the first visit. Face tracking also works offline once you've used it online, because its runtime and model are cached then. The manifest, icons, and service worker live in `public/`. The service worker is only registered in production builds.
+
 Choose **Marble maze** in the gallery to roll a marble through a randomly generated wooden maze to the copper ring, avoiding the pits; reaching the ring deals a new maze and falling in a pit returns the marble to the start. Its physics uses accelerometer gravity independently of view calibration, including in touch and face tracking modes. A flat phone is level; every tilt contributes, with no dead zone. Allow motion access when prompted. Without motion samples the marble stays still; touch only changes the view.
 
 ### Face tracking mode
